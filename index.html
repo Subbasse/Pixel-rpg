@@ -1318,33 +1318,36 @@ function mpHandleMessage(m) {
 function mpApplyPeerState(data) {
   // Host receives peer's player state
   if (MP.peerId !== 1) return;
+  if (!data) return;
 
   const peer = MP.peer;
-  peer.x = data.x;
-  peer.y = data.y;
-  peer.a = data.a;
-  peer.hp = data.hp;
-  peer.maxHp = data.maxHp;
-  peer.mp = data.mp;
-  peer.maxMp = data.maxMp;
-  peer.lv = data.lv;
-  peer.xp = data.xp;
-  peer.gold = data.gold;
-  peer.heal = data.heal;
-  peer.mana = data.mana;
-  peer.spell = data.spell;
-  peer.sp = data.sp;
-  peer.spells = data.spells;
-  peer.anim = data.anim;
-  peer.dead = data.dead;
-  peer.atk = data.atk;
-  peer.def = data.def;
-  peer.mag = data.mag;
-  peer.crit = data.crit;
-  peer.life = data.life;
-  peer.spdMul = data.spdMul;
-  peer.slowT = data.slowT ?? 0;
-  peer.poison = data.poison ?? 0;
+  if (!peer) return;
+
+  peer.x = data.x ?? peer.x;
+  peer.y = data.y ?? peer.y;
+  peer.a = data.a ?? peer.a;
+  peer.hp = data.hp ?? peer.hp;
+  peer.maxHp = data.maxHp ?? peer.maxHp;
+  peer.mp = data.mp ?? peer.mp;
+  peer.maxMp = data.maxMp ?? peer.maxMp;
+  peer.lv = data.lv ?? peer.lv;
+  peer.xp = data.xp ?? peer.xp;
+  peer.gold = data.gold ?? peer.gold;
+  peer.heal = data.heal ?? peer.heal;
+  peer.mana = data.mana ?? peer.mana;
+  peer.spell = data.spell ?? peer.spell;
+  peer.sp = data.sp ?? peer.sp;
+  peer.spells = data.spells ?? peer.spells;
+  peer.anim = data.anim ?? peer.anim;
+  peer.dead = data.dead ?? peer.dead;
+  peer.atk = data.atk ?? peer.atk;
+  peer.def = data.def ?? peer.def;
+  peer.mag = data.mag ?? peer.mag;
+  peer.crit = data.crit ?? peer.crit;
+  peer.life = data.life ?? peer.life;
+  peer.spdMul = data.spdMul ?? peer.spdMul;
+  peer.slowT = data.slowT ?? peer.slowT ?? 0;
+  peer.poison = data.poison ?? peer.poison ?? 0;
   if (data.weapon) {
     peer.weapon = data.weapon;
   }
@@ -1353,10 +1356,11 @@ function mpApplyPeerState(data) {
 function mpOnGameStart(data) {
   // Peer receives game start from host
   if (MP.peerId !== 2) return;
+  if (!data) return;
 
   // Load the floor with the host's seed
-  G.seed = data.seed;
-  loadFloor(data.floor);
+  G.seed = data.seed ?? G.seed;
+  loadFloor(data.floor ?? G.floor);
 
   // Initialize local player (we are player 2)
   // P is already initialized by newGame() but we need to sync position
@@ -1442,55 +1446,63 @@ function mpSerializeProjectile(p) {
 function mpApplyState(data) {
   // Host sends full state, peer applies it
   if (MP.peerId === 1) return; // Host doesn't apply
+  if (!data) return;
 
   // Load floor if different
   if (data.floor !== G.floor || data.seed !== G.seed) {
-    G.seed = data.seed;
-    loadFloor(data.floor);
+    G.seed = data.seed ?? G.seed;
+    loadFloor(data.floor ?? G.floor);
   }
 
   // Sync player (peer's view of host)
-  MP.peer = { ...MP.peer, ...data.player };
+  if (data.player) {
+    MP.peer = { ...MP.peer, ...data.player };
+  }
 
   // Sync entities
-  mpSyncEntities(data.entities);
+  if (Array.isArray(data.entities)) {
+    mpSyncEntities(data.entities);
+  }
 
   // Sync projectiles
-  G.proj = data.projectiles.map(p => ({...p}));
+  if (Array.isArray(data.projectiles)) {
+    G.proj = data.projectiles.map(p => ({...p}));
+  }
 
-  F.bossDead = data.bossDead;
-  F.key = data.keyFound;
-  G.time = data.time;
+  F.bossDead = data.bossDead ?? F.bossDead;
+  F.key = data.keyFound ?? F.key;
+  G.time = data.time ?? G.time;
 }
 
 function mpApplyPeerInput(inp) {
   // Host applies peer's input to move the peer player
   if (MP.peerId !== 1) return; // Only host processes peer input
+  if (!inp) return;
 
   const peer = MP.peer;
-  if (peer.dead) return;
+  if (!peer || peer.dead) return;
 
   const dt = 1/60; // Fixed timestep for input processing
-  const slow = peer.slowT > 0 ? 0.55 : 1;
-  const f = inp.fwd, s = inp.strafe, sp = 3.1 * slow, ca = Math.cos(peer.a), sa = Math.sin(peer.a);
+  const slow = (peer.slowT ?? 0) > 0 ? 0.55 : 1;
+  const f = inp.fwd ?? 0, s = inp.strafe ?? 0, sp = 3.1 * slow, ca = Math.cos(peer.a ?? 0), sa = Math.sin(peer.a ?? 0);
 
   // Apply movement
   const dx = (f * ca - s * sa) * sp * dt;
   const dy = (f * sa + s * ca) * sp * dt;
 
   // Simple collision check for peer
-  const nx = peer.x + dx, ny = peer.y + dy;
+  const nx = (peer.x ?? 0) + dx, ny = (peer.y ?? 0) + dy;
   if (!blockedAt(nx, ny, 0.22) && !entBlock(nx, ny, 0.22, null)) {
     peer.x = nx;
     peer.y = ny;
-  } else if (!blockedAt(nx, peer.y, 0.22) && !entBlock(nx, peer.y, 0.22, null)) {
+  } else if (!blockedAt(nx, peer.y ?? 0, 0.22) && !entBlock(nx, peer.y ?? 0, 0.22, null)) {
     peer.x = nx;
-  } else if (!blockedAt(peer.x, ny, 0.22) && !entBlock(peer.x, ny, 0.22, null)) {
+  } else if (!blockedAt(peer.x ?? 0, ny, 0.22) && !entBlock(peer.x ?? 0, ny, 0.22, null)) {
     peer.y = ny;
   }
 
   // Apply rotation
-  peer.a += inp.turn * dt + inp.look;
+  peer.a = (peer.a ?? 0) + (inp.turn ?? 0) * dt + (inp.look ?? 0);
 }
 
 function mpSyncEntities(entities) {
