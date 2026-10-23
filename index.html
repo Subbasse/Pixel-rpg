@@ -1018,27 +1018,43 @@ function mpCreatePeerConnection() {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' }
-    ]
+      { urls: 'stun:stun2.l.google.com:19302' },
+      // Fallback TURN servers (may need credentials in production)
+      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+    ],
+    iceCandidatePoolSize: 10
   });
 
   pc.onicecandidate = e => {
     if (e.candidate) {
+      console.log('ICE candidate:', e.candidate.type, e.candidate.protocol);
       mpSendSignal({ type: 'candidate', candidate: e.candidate.toJSON() });
+    } else {
+      console.log('ICE gathering complete');
     }
   };
 
   pc.onconnectionstatechange = () => {
-    console.log('WebRTC state:', pc.connectionState);
+    console.log('WebRTC state:', pc.connectionState, '(ICE:', pc.iceConnectionState, ')');
     if (pc.connectionState === 'connected') {
       MP.connected = true;
       mpOnConnected();
-    } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+    } else if (pc.connectionState === 'failed') {
+      console.error('WebRTC connection failed - check firewall/NAT');
+      mpOnDisconnected();
+    } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
       mpOnDisconnected();
     }
   };
 
+  pc.oniceconnectionstatechange = () => {
+    console.log('ICE connection state:', pc.iceConnectionState);
+  };
+
   pc.ondatachannel = e => {
+    console.log('Data channel received:', e.channel.label);
     MP.dc = e.channel;
     mpSetupDataChannel();
   };
@@ -1091,60 +1107,99 @@ function mpSend(msg) {
 
 function mpConnectSignaling(roomCode) {
   MP.roomCode = roomCode;
+  console.log('Connecting to signaling:', MP.signalUrl, 'room:', roomCode);
   MP.ws = new WebSocket(MP.signalUrl);
 
   MP.ws.onopen = () => {
-    console.log('Signaling connected');
+    console.log('Signaling connected, sending join for peerId:', MP.peerId);
     mpSendSignal({ type: 'join', room: roomCode, peerId: MP.peerId });
   };
 
   MP.ws.onmessage = async e => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'offer') {
-      await mpHandleOffer(msg.offer);
-    } else if (msg.type === 'answer') {
-      await mpHandleAnswer(msg.answer);
-    } else if (msg.type === 'candidate') {
-      await mpHandleCandidate(msg.candidate);
-    } else if (msg.type === 'peer-joined') {
-      console.log('Peer joined:', msg.peerId);
-      // Host: peer has joined, now create and send offer
-      if (MP.peerId === 1 && !MP.pc) {
-        await mpCreateHostOffer();
+    try {
+      const msg = JSON.parse(e.data);
+      console.log('Signaling message:', msg.type, msg);
+      if (msg.type === 'offer') {
+        await mpHandleOffer(msg.offer);
+      } else if (msg.type === 'answer') {
+        await mpHandleAnswer(msg.answer);
+      } else if (msg.type === 'candidate') {
+        await mpHandleCandidate(msg.candidate);
+      } else if (msg.type === 'peer-joined') {
+        console.log('Peer joined:', msg.peerId);
+        // Host: peer has joined, now create and send offer
+        if (MP.peerId === 1 && !MP.pc) {
+          await mpCreateHostOffer();
+        }
+      } else if (msg.type === 'peer-left') {
+        console.log('Peer left:', msg.peerId);
+        mpOnDisconnected();
+      } else if (msg.type === 'error') {
+        console.error('Signaling server error:', msg.message);
+        $('mpJoinStatus').textContent = 'Ошибка сервера: ' + msg.message;
+        $('mpJoinStatus').className = 'bad';
       }
-    } else if (msg.type === 'peer-left') {
-      mpOnDisconnected();
+    } catch (err) {
+      console.error('Signaling message error:', err);
     }
   };
 
-  MP.ws.onclose = () => {
-    console.log('Signaling disconnected, reconnecting...');
-    MP.reconnectTimer = setTimeout(() => mpConnectSignaling(MP.roomCode), 3000);
+  MP.ws.onclose = (e) => {
+    console.log('Signaling closed:', e.code, e.reason);
+    if (MP.mode) {
+      console.log('Reconnecting in 3s...');
+      MP.reconnectTimer = setTimeout(() => mpConnectSignaling(MP.roomCode), 3000);
+    }
   };
 
-  MP.ws.onerror = e => console.error('Signaling error:', e);
+  MP.ws.onerror = (e) => {
+    console.error('Signaling error:', e);
+    $('mpJoinStatus').textContent = 'Ошибка соединения с сервером сигнализации';
+    $('mpJoinStatus').className = 'bad';
+  };
 }
 
 async function mpCreateHostOffer() {
-  MP.pc = mpCreatePeerConnection();
-  MP.dc = MP.pc.createDataChannel('game', { ordered: true });
-  mpSetupDataChannel();
+  try {
+    console.log('Creating host offer...');
+    MP.pc = mpCreatePeerConnection();
+    MP.dc = MP.pc.createDataChannel('game', { ordered: true });
+    mpSetupDataChannel();
 
-  const offer = await MP.pc.createOffer();
-  await MP.pc.setLocalDescription(offer);
-  mpSendSignal({ type: 'offer', offer: MP.pc.localDescription });
+    const offer = await MP.pc.createOffer();
+    await MP.pc.setLocalDescription(offer);
+    console.log('Offer created, sending...');
+    mpSendSignal({ type: 'offer', offer: MP.pc.localDescription });
+  } catch (err) {
+    console.error('Failed to create offer:', err);
+    mpOnDisconnected();
+  }
 }
 
 async function mpHandleOffer(offer) {
-  MP.pc = mpCreatePeerConnection();
-  await MP.pc.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await MP.pc.createAnswer();
-  await MP.pc.setLocalDescription(answer);
-  mpSendSignal({ type: 'answer', answer: MP.pc.localDescription });
+  try {
+    console.log('Handling offer...');
+    MP.pc = mpCreatePeerConnection();
+    await MP.pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await MP.pc.createAnswer();
+    await MP.pc.setLocalDescription(answer);
+    console.log('Answer created, sending...');
+    mpSendSignal({ type: 'answer', answer: MP.pc.localDescription });
+  } catch (err) {
+    console.error('Failed to handle offer:', err);
+    mpOnDisconnected();
+  }
 }
 
 async function mpHandleAnswer(answer) {
-  await MP.pc.setRemoteDescription(new RTCSessionDescription(answer));
+  try {
+    console.log('Handling answer...');
+    await MP.pc.setRemoteDescription(new RTCSessionDescription(answer));
+    console.log('Answer set');
+  } catch (err) {
+    console.error('Failed to handle answer:', err);
+    mpOnDisconnected();
+  }
 }
 
 async function mpHandleCandidate(candidate) {
@@ -1179,13 +1234,15 @@ async function mpJoinGame(code) {
   $('mpJoin').hidden = true;
   $('mpConnecting').hidden = false;
   $('mpProgress').style.width = '30%';
+  $('mpJoinStatus').textContent = 'Подключение к серверу сигнализации...';
+  $('mpJoinStatus').className = '';
 
   mpConnectSignaling(MP.roomCode);
 
   // Wait for offer from host
   setTimeout(() => {
     if (!MP.pc) {
-      $('mpJoinStatus').textContent = 'Игра не найдена или хост не доступен';
+      $('mpJoinStatus').textContent = 'Игра не найдена или хост не доступен (10с)';
       $('mpJoinStatus').className = 'bad';
     }
   }, 10000);
