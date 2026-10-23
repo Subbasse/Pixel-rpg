@@ -1064,6 +1064,28 @@ function mpCreatePeerConnection() {
   return pc;
 }
 
+/* --- Ждём завершения сбора ICE-кандидатов --- */
+function waitForIceGathering(pc) {
+  return new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') {
+      resolve();
+      return;
+    }
+    const onStateChange = () => {
+      if (pc.iceGatheringState === 'complete') {
+        pc.onicegatheringstatechange = null;
+        resolve();
+      }
+    };
+    pc.onicegatheringstatechange = onStateChange;
+    // Fallback через 10 сек
+    setTimeout(() => {
+      pc.onicegatheringstatechange = null;
+      resolve();
+    }, 10000);
+  });
+}
+
 /* --- DataChannel --- */
 function mpSetupDataChannel() {
   if (!MP.dc) return;
@@ -1115,6 +1137,9 @@ async function mpCreateHost() {
   try {
     const offer = await MP.pc.createOffer();
     await MP.pc.setLocalDescription(offer);
+    // Ждём завершения сбора ICE-кандидатов
+    $('mpHostStatus').textContent = 'Сбор ICE-кандидатов...';
+    await waitForIceGathering(MP.pc);
   } catch (e) {
     $('mpHostStatus').textContent = 'Ошибка создания Offer: ' + e.message;
     $('mpHostStatus').className = 'bad';
@@ -1128,7 +1153,8 @@ async function mpCreateHost() {
 
   // Сохраняем offer для копирования
   MP.pendingOffer = MP.pc.localDescription;
-  $('mpHostStatus').textContent = '';
+  $('mpHostStatus').textContent = 'Offer готов — скопируйте и отправьте клиенту';
+  $('mpHostStatus').className = 'good';
 }
 
 /* --- Клиент: вставляет Offer, создаёт Answer --- */
@@ -1194,9 +1220,12 @@ async function mpPasteOfferCreateAnswer() {
     await MP.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }));
     const answer = await MP.pc.createAnswer();
     await MP.pc.setLocalDescription(answer);
+    // Ждём завершения сбора ICE-кандидатов
+    $('mpClientStatus').textContent = 'Сбор ICE-кандидатов...';
+    await waitForIceGathering(MP.pc);
 
     MP.pendingAnswer = MP.pc.localDescription;
-    $('mpClientStatus').textContent = 'Answer создан — скопируйте и верните хосту';
+    $('mpClientStatus').textContent = 'Answer готов — скопируйте и верните хосту';
     $('mpClientStatus').className = 'good';
   } catch (e) {
     $('mpClientStatus').textContent = 'Ошибка: ' + e.message;
