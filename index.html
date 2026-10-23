@@ -1108,6 +1108,10 @@ function mpConnectSignaling(roomCode) {
       await mpHandleCandidate(msg.candidate);
     } else if (msg.type === 'peer-joined') {
       console.log('Peer joined:', msg.peerId);
+      // Host: peer has joined, now create and send offer
+      if (MP.peerId === 1 && !MP.pc) {
+        await mpCreateHostOffer();
+      }
     } else if (msg.type === 'peer-left') {
       mpOnDisconnected();
     }
@@ -1119,6 +1123,16 @@ function mpConnectSignaling(roomCode) {
   };
 
   MP.ws.onerror = e => console.error('Signaling error:', e);
+}
+
+async function mpCreateHostOffer() {
+  MP.pc = mpCreatePeerConnection();
+  MP.dc = MP.pc.createDataChannel('game', { ordered: true });
+  mpSetupDataChannel();
+
+  const offer = await MP.pc.createOffer();
+  await MP.pc.setLocalDescription(offer);
+  mpSendSignal({ type: 'offer', offer: MP.pc.localDescription });
 }
 
 async function mpHandleOffer(offer) {
@@ -1153,15 +1167,8 @@ async function mpCreateGame() {
   $('btnCreateGame').hidden = true;
   $('btnJoinGame').hidden = true;
 
-  MP.pc = mpCreatePeerConnection();
-  MP.dc = MP.pc.createDataChannel('game', { ordered: true });
-  mpSetupDataChannel();
-
-  const offer = await MP.pc.createOffer();
-  await MP.pc.setLocalDescription(offer);
-
+  // Connect to signaling; offer will be sent after peer joins (in mpCreateHostOffer)
   mpConnectSignaling(MP.roomCode);
-  mpSendSignal({ type: 'offer', offer: MP.pc.localDescription });
 }
 
 async function mpJoinGame(code) {
