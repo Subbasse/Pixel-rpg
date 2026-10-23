@@ -1279,9 +1279,6 @@ function mpHandleMessage(m) {
     case 'player':
       mpApplyState(m.data);
       break;
-    case 'input':
-      mpApplyPeerInput(m.data);
-      break;
     case 'entity':
       mpApplyEntityUpdate(m.data);
       break;
@@ -1323,34 +1320,33 @@ function mpApplyPeerState(data) {
   const peer = MP.peer;
   if (!peer) return;
 
-  peer.x = data.x ?? peer.x;
-  peer.y = data.y ?? peer.y;
-  peer.a = data.a ?? peer.a;
-  peer.hp = data.hp ?? peer.hp;
-  peer.maxHp = data.maxHp ?? peer.maxHp;
-  peer.mp = data.mp ?? peer.mp;
-  peer.maxMp = data.maxMp ?? peer.maxMp;
-  peer.lv = data.lv ?? peer.lv;
-  peer.xp = data.xp ?? peer.xp;
-  peer.gold = data.gold ?? peer.gold;
-  peer.heal = data.heal ?? peer.heal;
-  peer.mana = data.mana ?? peer.mana;
-  peer.spell = data.spell ?? peer.spell;
-  peer.sp = data.sp ?? peer.sp;
-  peer.spells = data.spells ?? peer.spells;
-  peer.anim = data.anim ?? peer.anim;
-  peer.dead = data.dead ?? peer.dead;
-  peer.atk = data.atk ?? peer.atk;
-  peer.def = data.def ?? peer.def;
-  peer.mag = data.mag ?? peer.mag;
-  peer.crit = data.crit ?? peer.crit;
-  peer.life = data.life ?? peer.life;
-  peer.spdMul = data.spdMul ?? peer.spdMul;
-  peer.slowT = data.slowT ?? peer.slowT ?? 0;
-  peer.poison = data.poison ?? peer.poison ?? 0;
-  if (data.weapon) {
-    peer.weapon = data.weapon;
-  }
+  // Safe merge: only overwrite defined values (allows 0)
+  if (data.x !== undefined) peer.x = data.x;
+  if (data.y !== undefined) peer.y = data.y;
+  if (data.a !== undefined) peer.a = data.a;
+  if (data.hp !== undefined) peer.hp = data.hp;
+  if (data.maxHp !== undefined) peer.maxHp = data.maxHp;
+  if (data.mp !== undefined) peer.mp = data.mp;
+  if (data.maxMp !== undefined) peer.maxMp = data.maxMp;
+  if (data.lv !== undefined) peer.lv = data.lv;
+  if (data.xp !== undefined) peer.xp = data.xp;
+  if (data.gold !== undefined) peer.gold = data.gold;
+  if (data.heal !== undefined) peer.heal = data.heal;
+  if (data.mana !== undefined) peer.mana = data.mana;
+  if (data.spell !== undefined) peer.spell = data.spell;
+  if (data.sp !== undefined) peer.sp = data.sp;
+  if (data.spells !== undefined) peer.spells = data.spells;
+  if (data.anim !== undefined) peer.anim = data.anim;
+  if (data.dead !== undefined) peer.dead = data.dead;
+  if (data.atk !== undefined) peer.atk = data.atk;
+  if (data.def !== undefined) peer.def = data.def;
+  if (data.mag !== undefined) peer.mag = data.mag;
+  if (data.crit !== undefined) peer.crit = data.crit;
+  if (data.life !== undefined) peer.life = data.life;
+  if (data.spdMul !== undefined) peer.spdMul = data.spdMul;
+  if (data.slowT !== undefined) peer.slowT = data.slowT;
+  if (data.poison !== undefined) peer.poison = data.poison;
+  if (data.weapon !== undefined) peer.weapon = data.weapon;
 }
 
 function mpOnGameStart(data) {
@@ -1358,9 +1354,25 @@ function mpOnGameStart(data) {
   if (MP.peerId !== 2) return;
   if (!data) return;
 
+  // Guard: already in game, ignore duplicate game-start
+  if (G.mode === 'play' && G.world && G.world.start) return;
+
+  // --- Hard reset of any pause / input locks / overlays ---
+  G.mode = 'play';
+  G.paused = false;
+  hideOverlays();
+  $('dialog').hidden = true;
+  $('msgs').textContent = '';
+  keys.clear();
+  held = { atkTouch:false, fireTouch:false, useTouch:false, healTouch:false, manaTouch:false, stick:null };
+  drag = { active:false, x:0, y:0, moved:0, t:0 };
+
   // Load the floor with the host's seed
   G.seed = data.seed ?? G.seed;
   loadFloor(data.floor ?? G.floor);
+
+  // Ensure world loaded
+  if (!G.world || !G.world.start) return;
 
   // Initialize local player (we are player 2)
   // P is already initialized by newGame() but we need to sync position
@@ -1400,6 +1412,9 @@ function mpOnGameStart(data) {
 
   beginPlay();
   msg('Игра началась! Игрок 1 — хост.', 'gold');
+
+  // Immediately send our state so host sees us
+  mpSendPeerState();
 }
 
 function mpSyncFullState() {
@@ -1448,15 +1463,38 @@ function mpApplyState(data) {
   if (MP.peerId === 1) return; // Host doesn't apply
   if (!data) return;
 
-  // Load floor if different
-  if (data.floor !== G.floor || data.seed !== G.seed) {
-    G.seed = data.seed ?? G.seed;
-    loadFloor(data.floor ?? G.floor);
-  }
+  // NOTE: floor/seed sync is done only via explicit 'floor' message (mpChangeFloor)
+  // Periodic state updates must NOT reload the floor — it would reset local player position
 
-  // Sync player (peer's view of host)
+  // Sync player (peer's view of host) — safe merge: only overwrite defined values
   if (data.player) {
-    MP.peer = { ...MP.peer, ...data.player };
+    const p = data.player;
+    if (p.x !== undefined) MP.peer.x = p.x;
+    if (p.y !== undefined) MP.peer.y = p.y;
+    if (p.a !== undefined) MP.peer.a = p.a;
+    if (p.hp !== undefined) MP.peer.hp = p.hp;
+    if (p.maxHp !== undefined) MP.peer.maxHp = p.maxHp;
+    if (p.mp !== undefined) MP.peer.mp = p.mp;
+    if (p.maxMp !== undefined) MP.peer.maxMp = p.maxMp;
+    if (p.lv !== undefined) MP.peer.lv = p.lv;
+    if (p.xp !== undefined) MP.peer.xp = p.xp;
+    if (p.gold !== undefined) MP.peer.gold = p.gold;
+    if (p.heal !== undefined) MP.peer.heal = p.heal;
+    if (p.mana !== undefined) MP.peer.mana = p.mana;
+    if (p.spell !== undefined) MP.peer.spell = p.spell;
+    if (p.sp !== undefined) MP.peer.sp = p.sp;
+    if (p.spells !== undefined) MP.peer.spells = p.spells;
+    if (p.anim !== undefined) MP.peer.anim = p.anim;
+    if (p.dead !== undefined) MP.peer.dead = p.dead;
+    if (p.atk !== undefined) MP.peer.atk = p.atk;
+    if (p.def !== undefined) MP.peer.def = p.def;
+    if (p.mag !== undefined) MP.peer.mag = p.mag;
+    if (p.crit !== undefined) MP.peer.crit = p.crit;
+    if (p.life !== undefined) MP.peer.life = p.life;
+    if (p.spdMul !== undefined) MP.peer.spdMul = p.spdMul;
+    if (p.slowT !== undefined) MP.peer.slowT = p.slowT;
+    if (p.poison !== undefined) MP.peer.poison = p.poison;
+    if (p.weapon !== undefined) MP.peer.weapon = p.weapon;
   }
 
   // Sync entities
@@ -1472,37 +1510,6 @@ function mpApplyState(data) {
   F.bossDead = data.bossDead ?? F.bossDead;
   F.key = data.keyFound ?? F.key;
   G.time = data.time ?? G.time;
-}
-
-function mpApplyPeerInput(inp) {
-  // Host applies peer's input to move the peer player
-  if (MP.peerId !== 1) return; // Only host processes peer input
-  if (!inp) return;
-
-  const peer = MP.peer;
-  if (!peer || peer.dead) return;
-
-  const dt = 1/60; // Fixed timestep for input processing
-  const slow = (peer.slowT ?? 0) > 0 ? 0.55 : 1;
-  const f = inp.fwd ?? 0, s = inp.strafe ?? 0, sp = 3.1 * slow, ca = Math.cos(peer.a ?? 0), sa = Math.sin(peer.a ?? 0);
-
-  // Apply movement
-  const dx = (f * ca - s * sa) * sp * dt;
-  const dy = (f * sa + s * ca) * sp * dt;
-
-  // Simple collision check for peer
-  const nx = (peer.x ?? 0) + dx, ny = (peer.y ?? 0) + dy;
-  if (!blockedAt(nx, ny, 0.22) && !entBlock(nx, ny, 0.22, null)) {
-    peer.x = nx;
-    peer.y = ny;
-  } else if (!blockedAt(nx, peer.y ?? 0, 0.22) && !entBlock(nx, peer.y ?? 0, 0.22, null)) {
-    peer.x = nx;
-  } else if (!blockedAt(peer.x ?? 0, ny, 0.22) && !entBlock(peer.x ?? 0, ny, 0.22, null)) {
-    peer.y = ny;
-  }
-
-  // Apply rotation
-  peer.a = (peer.a ?? 0) + (inp.turn ?? 0) * dt + (inp.look ?? 0);
 }
 
 function mpSyncEntities(entities) {
@@ -1564,8 +1571,10 @@ function mpApplyPickup(data) {
 }
 
 function mpChangeFloor(data) {
-  loadFloor(data.floor);
-  G.seed = data.seed;
+  if (data.floor !== G.floor) {
+    loadFloor(data.floor);
+    G.seed = data.seed;
+  }
 }
 
 function mpSendPlayerUpdate() {
@@ -2218,9 +2227,14 @@ function spawn(d) {
   return e;
 }
 function loadFloor(i) {
-  const spec = LEVELS[i], B = BIOMES[spec.biome], L = genLevel(i, G.seed + i * 131);
+  if (i === undefined || i === null || i < 0 || i >= LEVELS.length) return;
+  const spec = LEVELS[i];
+  if (!spec) return;
+  const B = BIOMES[spec.biome];
+  if (!B) return;
+  const L = genLevel(i, (G.seed ?? 0) + i * 131);
   G.floor = i;
-  G.world = { grid: L.grid, w: L.w, h: L.h, special: L.special, tex: biomeTex(spec.biome), name: B.name, biome: spec.biome, meta: L.meta };
+  G.world = { grid: L.grid, w: L.w, h: L.h, special: L.special, tex: biomeTex(spec.biome), name: B.name, biome: spec.biome, meta: L.meta, start: L.start };
   G.ents = L.ents.map(spawn);
   G.seen = Array.from({ length: L.h }, () => Array(L.w).fill(false));
   G.proj = []; G.fx = []; G.bolts = []; G.nums = []; G.boss = null; G.shopEnt = null;
@@ -3342,9 +3356,9 @@ function frame(now) {
         mpSendPeerState();
       }
 
-      // Send local input to peer for prediction
-      if ((inp.fwd !== 0 || inp.strafe !== 0 || inp.turn !== 0 || inp.look !== 0) && MP.peerId === 2) {
-        mpSendInput(inp);
+      // Send local position to peer every frame (authoritative)
+      if (MP.peerId === 2) {
+        mpSendPeerState();
       }
     }
   } else {
@@ -3566,7 +3580,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && G.m
 
 /* ============ УПРАВЛЕНИЕ: клавиатура, мышь, геймпад, сенсор ============ */
 const keys = new Set();
-const held = { atkTouch: false, fireTouch: false };
+let held = { atkTouch: false, fireTouch: false };
 const joy = { x: 0, y: 0 };
 let lookAcc = 0, touchPref = 'auto', sawTouch = false;
 const setDevice = d => { if (G.device !== d) { G.device = d; document.body.dataset.device = d; } };
@@ -3801,8 +3815,8 @@ $('btnStartMP').addEventListener('click', () => {
   if (MP.connected && MP.peerId === 1) {
     hideOverlays();
     startGame();
-    // Send floor sync to peer
-    setTimeout(() => mpSendFloorChange(), 100);
+    // Send game-start signal to client via Data Channel with seed and floor
+    mpSend({ type: 'game-start', data: { seed: G.seed, floor: G.floor } });
   }
 });
 
