@@ -321,8 +321,12 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
           <h2>Мультиплеер</h2>
           <p class="sub">Создайте игру или присоединитесь по коду. Соединение P2P через WebRTC.</p>
           <div class="btnrow" style="margin-top:1cqw">
-            <button type="button" class="pixbtn primary" id="btnCreateGame">Создать игру</button>
-            <button type="button" class="pixbtn" id="btnJoinGame">Присоединиться</button>
+            <button type="button" class="pixbtn primary" id="btnCreateGame">Создать игру (авто)</button>
+            <button type="button" class="pixbtn" id="btnCreateGameManual">Создать игру (ручной)</button>
+          </div>
+          <div class="btnrow" style="margin-top:1cqw">
+            <button type="button" class="pixbtn primary" id="btnJoinGame">Присоединиться (авто)</button>
+            <button type="button" class="pixbtn" id="btnJoinGameManual">Присоединиться (ручной)</button>
           </div>
           <div id="mpCreate" hidden>
             <p>Ваш код игры: <b id="mpCode" style="color:var(--gold);font-family:var(--font-pix);letter-spacing:0.2em"></b></p>
@@ -339,6 +343,7 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
           </div>
           <div id="mpConnecting" hidden>
             <p>Подключение...</p>
+            <div id="mpConnSteps" style="margin:1cqw 0;font-family:var(--font-pix);font-size:0.7em;line-height:1.8;text-align:left;min-height:5em"></div>
             <div style="width:60cqw;height:4px;background:#2a1a2e;border-radius:2px;overflow:hidden">
               <div id="mpProgress" style="width:0%;height:100%;background:var(--accent);transition:width 0.3s"></div>
             </div>
@@ -348,6 +353,14 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
             <p class="good">Игрок подключён!</p>
             <button type="button" class="pixbtn primary" id="btnStartMP">Начать игру</button>
             <button type="button" class="pixbtn" id="btnDisconnect">Отключиться</button>
+          </div>
+          <div id="mpManualBtns" hidden style="margin-top:1cqw;display:grid;gap:0.5cqw">
+            <button type="button" class="pixbtn primary" id="btnCopyOffer">Скопировать Offer</button>
+            <button type="button" class="pixbtn" id="btnPasteAnswer">Вставить Answer</button>
+            <button type="button" class="pixbtn" id="btnPasteOffer">Вставить Offer и создать Answer</button>
+            <button type="button" class="pixbtn" id="btnCopyICE">Скопировать ICE</button>
+            <button type="button" class="pixbtn" id="btnPasteICE">Вставить ICE</button>
+            <p class="sub" id="mpManualStatus" style="min-height:2em"></p>
           </div>
           <button type="button" class="pixbtn" id="btnBackFromMP" style="margin-top:2cqw">Назад</button>
         </div>
@@ -967,23 +980,28 @@ const SLOT_NAME = { weapon: 'Оружие', helm: 'Шлем', armor: 'Броня
 const xpNext = L => Math.round(20 * Math.pow(L, 1.45));
 
 /* ============ МУЛЬТИПЛЕЕР: WebRTC P2P ============ */
+/* Два режима:
+   1. АВТО — публичный WebSocket-релей (broadcast по комнате)
+   2. РУЧНОЙ — Copy/Paste SDP offer/answer через буфер обмена (без серверов)
+*/
 const MP = {
-  mode: null,          // 'host' | 'join' | 'connected'
-  pc: null,            // RTCPeerConnection
-  dc: null,            // RTCDataChannel
-  peerId: null,        // our player ID (1 or 2)
+  mode: null,           // 'host' | 'join' | 'connected' | 'manual-host' | 'manual-join'
+  pc: null,             // RTCPeerConnection
+  dc: null,             // RTCDataChannel
+  peerId: null,         // our player ID (1 or 2)
   connected: false,
   pendingCandidates: [],
-  signalUrl: 'wss://relay.p2p.help/', // free public signaling relay
+  signalUrl: 'wss://webrtc-relay.glitch.me/', // надежный публичный релей
   ws: null,
   reconnectTimer: null,
+  manualMode: false,    // true = ручной обмен SDP через буфер
 
   // Game state for sync
   sync: {
     seq: 0,
     lastAck: 0,
     pending: new Map(),
-    entities: new Map(), // entityId -> {x,y,hp,dead,alert,etc}
+    entities: new Map(),
     projectiles: [],
     pickups: [],
     floor: 0,
@@ -1009,7 +1027,6 @@ const MP = {
 };
 
 function mpInit() {
-  // Generate 6-char room code
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
@@ -1019,7 +1036,6 @@ function mpCreatePeerConnection() {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      // Fallback TURN servers (may need credentials in production)
       { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
       { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
       { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
@@ -1029,10 +1045,15 @@ function mpCreatePeerConnection() {
 
   pc.onicecandidate = e => {
     if (e.candidate) {
-      console.log('ICE candidate:', e.candidate.type, e.candidate.protocol);
-      mpSendSignal({ type: 'candidate', candidate: e.candidate.toJSON() });
+      console.log('ICE candidate:', e.candidate.type);
+      if (MP.manualMode) {
+        mpQueueCandidate(e.candidate.toJSON());
+      } else {
+        mpSendSignal({ type: 'candidate', candidate: e.candidate.toJSON() });
+      }
     } else {
       console.log('ICE gathering complete');
+      if (MP.manualMode) mpFlushCandidates();
     }
   };
 
@@ -1042,7 +1063,7 @@ function mpCreatePeerConnection() {
       MP.connected = true;
       mpOnConnected();
     } else if (pc.connectionState === 'failed') {
-      console.error('WebRTC connection failed - check firewall/NAT');
+      console.error('WebRTC connection failed');
       mpOnDisconnected();
     } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
       mpOnDisconnected();
@@ -1062,32 +1083,74 @@ function mpCreatePeerConnection() {
   return pc;
 }
 
+/* --- Ручной режим: буферизация ICE кандидатов --- */
+const mpCandidateBuffer = [];
+function mpQueueCandidate(c) { mpCandidateBuffer.push(c); }
+function mpFlushCandidates() {
+  if (mpCandidateBuffer.length) {
+    const blob = JSON.stringify({ type: 'ice-batch', candidates: mpCandidateBuffer });
+    navigator.clipboard.writeText(blob).then(() => {
+      toast('ICE-кандидаты скопированы — отправьте собеседнику', 2000);
+    });
+    mpCandidateBuffer.length = 0;
+  }
+}
+
+/* --- DataChannel --- */
 function mpSetupDataChannel() {
   if (!MP.dc) return;
-
   MP.dc.binaryType = 'arraybuffer';
-
-  MP.dc.onopen = () => {
-    console.log('Data channel open');
-    MP.connected = true;
-    mpOnConnected();
-  };
-
-  MP.dc.onclose = () => {
-    console.log('Data channel closed');
-    mpOnDisconnected();
-  };
-
+  MP.dc.onopen = () => { console.log('Data channel open'); MP.connected = true; mpOnConnected(); };
+  MP.dc.onclose = () => { console.log('Data channel closed'); mpOnDisconnected(); };
   MP.dc.onerror = e => console.error('Data channel error:', e);
-
   MP.dc.onmessage = e => {
-    try {
-      const msg = JSON.parse(new TextDecoder().decode(e.data));
-      mpHandleMessage(msg);
-    } catch (err) {
-      console.error('Failed to parse message:', err);
-    }
+    try { mpHandleMessage(JSON.parse(new TextDecoder().decode(e.data))); }
+    catch (err) { console.error('Parse error:', err); }
   };
+}
+
+function mpSend(msg) {
+  if (MP.dc && MP.dc.readyState === 'open') {
+    MP.dc.send(new TextEncoder().encode(JSON.stringify(msg)));
+  } else {
+    MP.sync.pending.set(MP.sync.seq++, msg);
+  }
+}
+
+/* --- Авто-сигналинг через WebSocket-релей --- */
+function mpConnectSignaling(roomCode) {
+  MP.roomCode = roomCode;
+  console.log('Connecting to signaling:', MP.signalUrl, 'room:', roomCode);
+  MP.ws = new WebSocket(MP.signalUrl);
+
+  MP.ws.onopen = () => {
+    console.log('Signaling connected, peerId:', MP.peerId);
+    MP.ws.send(JSON.stringify({ type: 'join', room: roomCode, peerId: MP.peerId }));
+  };
+
+  MP.ws.onmessage = async e => {
+    try {
+      const msg = JSON.parse(e.data);
+      console.log('Signaling msg:', msg.type);
+      if (msg.type === 'offer') await mpHandleOffer(msg.offer);
+      else if (msg.type === 'answer') await mpHandleAnswer(msg.answer);
+      else if (msg.type === 'candidate') await mpHandleCandidate(msg.candidate);
+      else if (msg.type === 'ice-batch') {
+        for (const c of msg.candidates) await mpHandleCandidate(c);
+      }
+      else if (msg.type === 'peer-joined') {
+        console.log('Peer joined:', msg.peerId);
+        if (MP.peerId === 1 && !MP.pc) await mpCreateHostOffer();
+      }
+      else if (msg.type === 'peer-left') mpOnDisconnected();
+    } catch (err) { console.error('Signaling msg error:', err); }
+  };
+
+  MP.ws.onclose = e => {
+    console.log('Signaling closed:', e.code);
+    if (MP.mode && !MP.manualMode) MP.reconnectTimer = setTimeout(() => mpConnectSignaling(MP.roomCode), 3000);
+  };
+  MP.ws.onerror = e => console.error('Signaling error:', e);
 }
 
 function mpSendSignal(msg) {
@@ -1096,86 +1159,105 @@ function mpSendSignal(msg) {
   }
 }
 
-function mpSend(msg) {
-  if (MP.dc && MP.dc.readyState === 'open') {
-    MP.dc.send(new TextEncoder().encode(JSON.stringify(msg)));
-  } else {
-    // Queue for later
-    MP.sync.pending.set(MP.sync.seq++, msg);
-  }
-}
-
-function mpConnectSignaling(roomCode) {
-  MP.roomCode = roomCode;
-  console.log('Connecting to signaling:', MP.signalUrl, 'room:', roomCode);
-  MP.ws = new WebSocket(MP.signalUrl);
-
-  MP.ws.onopen = () => {
-    console.log('Signaling connected, sending join for peerId:', MP.peerId);
-    mpSendSignal({ type: 'join', room: roomCode, peerId: MP.peerId });
-  };
-
-  MP.ws.onmessage = async e => {
-    try {
-      const msg = JSON.parse(e.data);
-      console.log('Signaling message:', msg.type, msg);
-      if (msg.type === 'offer') {
-        await mpHandleOffer(msg.offer);
-      } else if (msg.type === 'answer') {
-        await mpHandleAnswer(msg.answer);
-      } else if (msg.type === 'candidate') {
-        await mpHandleCandidate(msg.candidate);
-      } else if (msg.type === 'peer-joined') {
-        console.log('Peer joined:', msg.peerId);
-        // Host: peer has joined, now create and send offer
-        if (MP.peerId === 1 && !MP.pc) {
-          await mpCreateHostOffer();
-        }
-      } else if (msg.type === 'peer-left') {
-        console.log('Peer left:', msg.peerId);
-        mpOnDisconnected();
-      } else if (msg.type === 'error') {
-        console.error('Signaling server error:', msg.message);
-        $('mpJoinStatus').textContent = 'Ошибка сервера: ' + msg.message;
-        $('mpJoinStatus').className = 'bad';
-      }
-    } catch (err) {
-      console.error('Signaling message error:', err);
-    }
-  };
-
-  MP.ws.onclose = (e) => {
-    console.log('Signaling closed:', e.code, e.reason);
-    if (MP.mode) {
-      console.log('Reconnecting in 3s...');
-      MP.reconnectTimer = setTimeout(() => mpConnectSignaling(MP.roomCode), 3000);
-    }
-  };
-
-  MP.ws.onerror = (e) => {
-    console.error('Signaling error:', e);
-    $('mpJoinStatus').textContent = 'Ошибка соединения с сервером сигнализации';
-    $('mpJoinStatus').className = 'bad';
-  };
-}
-
-async function mpCreateHostOffer() {
+async function mpHandleCandidate(candidate) {
+  if (!MP.pc) return;
   try {
-    console.log('Creating host offer...');
-    MP.pc = mpCreatePeerConnection();
-    MP.dc = MP.pc.createDataChannel('game', { ordered: true });
-    mpSetupDataChannel();
-
-    const offer = await MP.pc.createOffer();
-    await MP.pc.setLocalDescription(offer);
-    console.log('Offer created, sending...');
-    mpSendSignal({ type: 'offer', offer: MP.pc.localDescription });
+    await MP.pc.addIceCandidate(new RTCIceCandidate(candidate));
   } catch (err) {
-    console.error('Failed to create offer:', err);
-    mpOnDisconnected();
+    console.error('ICE candidate error:', err);
   }
 }
 
+/* --- Ручной режим: копирование/вставка SDP --- */
+function mpCopyToClipboard(label, obj) {
+  const text = JSON.stringify(obj);
+  navigator.clipboard.writeText(text).then(() => toast(label + ' скопирован', 1500));
+}
+function mpPasteFromClipboard() {
+  return navigator.clipboard.readText().then(t => JSON.parse(t)).catch(() => null);
+}
+
+/* --- Создание игры --- */
+async function mpCreateGame() {
+  MP.mode = 'host';
+  MP.peerId = 1;
+  MP.manualMode = false;
+  MP.roomCode = mpInit();
+
+  $('mpCode').textContent = MP.roomCode;
+  $('mpCreate').hidden = false;
+  $('btnCreateGame').hidden = true;
+  $('btnJoinGame').hidden = true;
+  $('mpManualBtns').hidden = true;
+
+  mpConnectSignaling(MP.roomCode);
+}
+
+async function mpCreateGameManual() {
+  MP.mode = 'manual-host';
+  MP.peerId = 1;
+  MP.manualMode = true;
+  MP.roomCode = mpInit();
+
+  $('mpCode').textContent = MP.roomCode + ' (ручной)';
+  $('mpCreate').hidden = false;
+  $('mpManualBtns').hidden = false;
+  $('btnCreateGame').hidden = true;
+  $('btnJoinGame').hidden = true;
+
+  // Создаём PC и оффер сразу
+  MP.pc = mpCreatePeerConnection();
+  MP.dc = MP.pc.createDataChannel('game', { ordered: true });
+  mpSetupDataChannel();
+
+  const offer = await MP.pc.createOffer();
+  await MP.pc.setLocalDescription(offer);
+  mpCopyToClipboard('Offer', { type: 'offer', offer: MP.pc.localDescription });
+  $('mpManualStatus').textContent = 'Offer скопирован — отправьте второму игроку. Ждите Answer...';
+}
+
+/* --- Присоединение --- */
+async function mpJoinGame(code) {
+  MP.mode = 'join';
+  MP.peerId = 2;
+  MP.manualMode = false;
+  MP.roomCode = code.toUpperCase();
+
+  $('mpJoin').hidden = true;
+  $('mpConnecting').hidden = false;
+  $('mpProgress').style.width = '30%';
+  $('mpJoinStatus').textContent = 'Подключение...';
+
+  mpConnectSignaling(MP.roomCode);
+
+  setTimeout(() => {
+    if (!MP.pc) { $('mpJoinStatus').textContent = 'Игра не найдена (10с)'; $('mpJoinStatus').className = 'bad'; }
+  }, 10000);
+}
+
+async function mpJoinGameManual() {
+  MP.mode = 'manual-join';
+  MP.peerId = 2;
+  MP.manualMode = true;
+
+  $('mpJoin').hidden = true;
+  $('mpManualBtns').hidden = false;
+  $('mpManualStatus').textContent = 'Вставьте Offer от хоста и нажмите кнопку ниже';
+}
+
+async function mpPasteOfferAndCreateAnswer() {
+  const data = await mpPasteFromClipboard();
+  if (!data || data.type !== 'offer') { toast('Неверный Offer', 1500); return; }
+
+  MP.pc = mpCreatePeerConnection();
+  await MP.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+  const answer = await MP.pc.createAnswer();
+  await MP.pc.setLocalDescription(answer);
+  mpCopyToClipboard('Answer', { type: 'answer', answer: MP.pc.localDescription });
+  $('mpManualStatus').textContent = 'Answer скопирован — верните хосту. Ждите ICE...';
+}
+
+/* --- Обработка Offer/Answer --- */
 async function mpHandleOffer(offer) {
   try {
     console.log('Handling offer...');
@@ -1183,69 +1265,17 @@ async function mpHandleOffer(offer) {
     await MP.pc.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await MP.pc.createAnswer();
     await MP.pc.setLocalDescription(answer);
-    console.log('Answer created, sending...');
-    mpSendSignal({ type: 'answer', answer: MP.pc.localDescription });
-  } catch (err) {
-    console.error('Failed to handle offer:', err);
-    mpOnDisconnected();
-  }
+    if (MP.manualMode) mpCopyToClipboard('Answer', { type: 'answer', answer: MP.pc.localDescription });
+    else mpSendSignal({ type: 'answer', answer: MP.pc.localDescription });
+  } catch (err) { console.error('Offer error:', err); mpOnDisconnected(); }
 }
 
 async function mpHandleAnswer(answer) {
   try {
     console.log('Handling answer...');
     await MP.pc.setRemoteDescription(new RTCSessionDescription(answer));
-    console.log('Answer set');
-  } catch (err) {
-    console.error('Failed to handle answer:', err);
-    mpOnDisconnected();
-  }
-}
-
-async function mpHandleCandidate(candidate) {
-  if (MP.pc) {
-    try {
-      await MP.pc.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch (e) {
-      console.error('ICE candidate error:', e);
-    }
-  }
-}
-
-async function mpCreateGame() {
-  MP.mode = 'host';
-  MP.peerId = 1;
-  MP.roomCode = mpInit();
-
-  $('mpCode').textContent = MP.roomCode;
-  $('mpCreate').hidden = false;
-  $('btnCreateGame').hidden = true;
-  $('btnJoinGame').hidden = true;
-
-  // Connect to signaling; offer will be sent after peer joins (in mpCreateHostOffer)
-  mpConnectSignaling(MP.roomCode);
-}
-
-async function mpJoinGame(code) {
-  MP.mode = 'join';
-  MP.peerId = 2;
-  MP.roomCode = code.toUpperCase();
-
-  $('mpJoin').hidden = true;
-  $('mpConnecting').hidden = false;
-  $('mpProgress').style.width = '30%';
-  $('mpJoinStatus').textContent = 'Подключение к серверу сигнализации...';
-  $('mpJoinStatus').className = '';
-
-  mpConnectSignaling(MP.roomCode);
-
-  // Wait for offer from host
-  setTimeout(() => {
-    if (!MP.pc) {
-      $('mpJoinStatus').textContent = 'Игра не найдена или хост не доступен (10с)';
-      $('mpJoinStatus').className = 'bad';
-    }
-  }, 10000);
+    if (MP.manualMode) $('mpManualStatus').textContent = 'Answer принят. Обмен ICE...';
+  } catch (err) { console.error('Answer error:', err); mpOnDisconnected(); }
 }
 
 function mpOnConnected() {
@@ -1253,46 +1283,24 @@ function mpOnConnected() {
   $('mpConnecting').hidden = true;
   $('mpConnected').hidden = false;
   $('mpProgress').style.width = '100%';
-
-  // Sync initial game state
-  if (MP.peerId === 1) {
-    mpSyncFullState();
-  }
+  if (MP.peerId === 1) mpSyncFullState();
 }
 
 function mpOnDisconnected() {
   MP.connected = false;
-  console.log('Disconnected from peer');
+  console.log('Disconnected');
+  if (MP.mode && G.mode === 'play') { toast('Связь потеряна!', 3000); msg('Игрок отключился', 'bad'); }
 
-  if (MP.mode && G.mode === 'play') {
-    toast('Связь с игроком потеряна!', 3000);
-    msg('Игрок отключился. Игра продолжается в одиночном режиме.', 'bad');
-  }
+  $('mpCreate').hidden = true; $('mpJoin').hidden = true;
+  $('mpConnecting').hidden = true; $('mpConnected').hidden = true;
+  $('mpManualBtns').hidden = true;
+  $('btnCreateGame').hidden = false; $('btnJoinGame').hidden = false;
+  $('mpJoinCode').value = ''; $('mpJoinStatus').textContent = '';
 
-  // Reset UI
-  $('mpCreate').hidden = true;
-  $('mpJoin').hidden = true;
-  $('mpConnecting').hidden = true;
-  $('mpConnected').hidden = true;
-  $('btnCreateGame').hidden = false;
-  $('btnJoinGame').hidden = false;
-  $('mpJoinCode').value = '';
-  $('mpJoinStatus').textContent = '';
-
-  if (MP.reconnectTimer) {
-    clearTimeout(MP.reconnectTimer);
-    MP.reconnectTimer = null;
-  }
-  if (MP.ws) {
-    MP.ws.close();
-    MP.ws = null;
-  }
-  if (MP.pc) {
-    MP.pc.close();
-    MP.pc = null;
-  }
-  MP.dc = null;
-  MP.mode = null;
+  if (MP.reconnectTimer) { clearTimeout(MP.reconnectTimer); MP.reconnectTimer = null; }
+  if (MP.ws) { MP.ws.close(); MP.ws = null; }
+  if (MP.pc) { MP.pc.close(); MP.pc = null; }
+  MP.dc = null; MP.mode = null; MP.manualMode = false;
 }
 
 function mpHandleMessage(m) {
@@ -3833,6 +3841,75 @@ $('btnDisconnect').addEventListener('click', () => {
 $('btnBackFromMP').addEventListener('click', () => {
   mpOnDisconnected();
   hideOverlays(); showOverlay('ovTitle');
+});
+
+/* ---- Ручной режим WebRTC (Copy/Paste SDP) ---- */
+$('btnCreateGameManual').addEventListener('click', () => {
+  unlockAudio(); mpCreateGameManual();
+});
+
+$('btnJoinGameManual').addEventListener('click', () => {
+  unlockAudio(); mpJoinGameManual();
+});
+
+$('btnCopyOffer').addEventListener('click', () => {
+  if (!MP.pc || !MP.pc.localDescription) {
+    $('mpManualStatus').textContent = 'Сначала создайте игру';
+    $('mpManualStatus').className = 'bad';
+    return;
+  }
+  const data = { type: 'offer', offer: MP.pc.localDescription };
+  navigator.clipboard.writeText(JSON.stringify(data)).then(() => {
+    $('mpManualStatus').textContent = 'Offer скопирован в буфер обмена';
+    $('mpManualStatus').className = 'good';
+  });
+});
+
+$('btnPasteAnswer').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    const data = JSON.parse(text);
+    if (data.type !== 'answer') throw new Error('Не Answer');
+    mpHandleAnswer(data.answer);
+    $('mpManualStatus').textContent = 'Answer применён, ждём ICE...';
+    $('mpManualStatus').className = 'good';
+  } catch (e) {
+    $('mpManualStatus').textContent = 'Ошибка: ' + e.message;
+    $('mpManualStatus').className = 'bad';
+  }
+});
+
+$('btnPasteOffer').addEventListener('click', async () => {
+  try {
+    await mpPasteOfferAndCreateAnswer();
+    $('mpManualStatus').textContent = 'Offer принят, Answer создан — скопируйте его';
+    $('mpManualStatus').className = 'good';
+  } catch (e) {
+    $('mpManualStatus').textContent = 'Ошибка: ' + e.message;
+    $('mpManualStatus').className = 'bad';
+  }
+});
+
+$('btnCopyICE').addEventListener('click', () => {
+  mpFlushCandidates();
+  $('mpManualStatus').textContent = 'ICE кандидаты скопированы';
+  $('mpManualStatus').className = 'good';
+});
+
+$('btnPasteICE').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    const data = JSON.parse(text);
+    if (data.type !== 'ice-batch') throw new Error('Не ICE-данные');
+    for (const c of data.candidates) {
+      await mpHandleCandidate(c);
+    }
+    $('mpManualStatus').textContent = 'ICE кандидаты применены (' + data.candidates.length + ')';
+    $('mpManualStatus').className = 'good';
+  } catch (e) {
+    $('mpManualStatus').textContent = 'Ошибка: ' + e.message;
+    $('mpManualStatus').className = 'bad';
+  }
 });
 
 /* ---- иконки и запуск ---- */
