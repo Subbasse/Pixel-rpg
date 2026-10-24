@@ -106,6 +106,7 @@ img { image-rendering: pixelated; }
 .sub { color: var(--dim); }
 .pixbtn { background: var(--panel); border: 0; padding: 1.2cqw 2.6cqw; min-height: 40px; font-family: var(--font-pix); font-size: clamp(8px, 1.7cqw, calc(13px * var(--s))); color: var(--ink); box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--line); margin: 6px; }
 .pixbtn:hover { background: var(--panel-hi); }
+body[data-device="touch"] #btnMouse { display: none; }
 .pixbtn.primary { background: var(--accent); color: #1a0f08; box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--ink); }
 .pixbtn.primary:hover { background: #f5a15e; }
 .btnrow { display: flex; flex-wrap: wrap; gap: .6cqw; justify-content: center; }
@@ -305,59 +306,13 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
       <div class="ov" id="ovTitle">
         <div class="ov-in">
           <h1>Катакомбы<br>Пикселя</h1>
-          <p>Пиксельная RPG от первого лица. Спускайся через пять миров, собирай оружие и броню, изучай магию и победи Короля-Лича.</p>
-          <div class="btnrow"><button type="button" class="pixbtn primary" id="btnContinue" hidden>Продолжить</button><button type="button" class="pixbtn" id="btnStart">Новая игра</button><button type="button" class="pixbtn" id="btnMultiplayer">Мультиплеер</button><button type="button" class="pixbtn" id="btnFullT">Во весь экран</button></div>
+          <p>Пиксельная RPG от первого лица. Спускайся через девять миров, собирай оружие и броню, изучай магию и победи Короля-Лича.</p>
+          <div class="btnrow"><button type="button" class="pixbtn primary" id="btnContinue" hidden>Продолжить</button><button type="button" class="pixbtn" id="btnStart">Новая игра</button><button type="button" class="pixbtn" id="btnFullT">Во весь экран</button></div>
           <div class="keys">
-            <div data-for="kbd"><b>КЛАВИАТУРА</b>WASD движение<br>←/→ или мышь: поворот<br>Пробел удар · F магия<br>Q/C заклинание · E действие<br>Tab или I: рюкзак · H/R зелья</div>
+            <div data-for="kbd"><b>КЛАВИАТУРА</b>WASD движение<br>←/→ или мышь: поворот<br>Пробел/ЛКМ удар · F/ПКМ магия<br>Q/C заклинание · E действие<br>Tab или I: рюкзак · H/R зелья</div>
             <div data-for="pad"><b>ГЕЙМПАД</b>Левый стик движение<br>Правый стик поворот<br>RT/X удар · LT/B магия<br>LB/RB заклинание · A действие<br>Select рюкзак · Y/L3 зелья</div>
             <div data-for="touch"><b>СЕНСОР</b>Джойстик слева: ходьба<br>Свайп по экрану: поворот<br>Касание: удар<br>Кнопки справа: магия, действие, зелья<br>Кнопка ☰ вверху: рюкзак</div>
           </div>
-        </div>
-      </div>
-
-      <!-- Мультиплеер: ручной обмен SDP через буфер обмена -->
-      <div class="ov" id="ovMultiplayer" hidden>
-        <div class="ov-in">
-          <h2>Мультиплеер (P2P)</h2>
-          <p class="sub">Обмен SDP через буфер обмена — никаких серверов. Работает на GitHub Pages.</p>
-          <div class="btnrow" style="margin-top:1cqw">
-            <button type="button" class="pixbtn primary" id="btnCreateHost">Создать игру (хост)</button>
-          </div>
-          <div class="btnrow" style="margin-top:1cqw">
-            <button type="button" class="pixbtn primary" id="btnJoinAsClient">Присоединиться (клиент)</button>
-          </div>
-
-          <!-- Хост: создаёт Offer -->
-          <div id="mpHostOffer" hidden>
-            <p class="good">Ваш Offer готов. Скопируйте и отправьте второму игроку.</p>
-            <button type="button" class="pixbtn primary" id="btnCopyOffer">Скопировать Offer</button>
-            <p class="sub" style="margin-top:0.5cqw">Ждём Answer от второго игрока...</p>
-            <label style="display:block;margin-top:1cqw;text-align:left">Вставить Answer:</label>
-            <textarea id="mpPasteAnswer" class="pixbtn" style="width:100%;height:60px;margin-top:0.5cqw;padding:0.5cqw;background:var(--panel);border:0;box-shadow:0 0 0 3px #000,0 0 0 6px var(--line);color:var(--ink);font-family:var(--font-pix);font-size:0.7em" placeholder="Вставьте Answer JSON сюда"></textarea>
-            <button type="button" class="pixbtn" id="btnPasteAnswer" style="margin-top:0.5cqw">Вставить Answer</button>
-            <button type="button" class="pixbtn" id="btnCancelHost" style="margin-top:0.5cqw">Отмена</button>
-            <p class="sub" id="mpHostStatus"></p>
-          </div>
-
-          <!-- Клиент: вставляет Offer, создаёт Answer -->
-          <div id="mpClientOffer" hidden>
-            <label style="display:block;margin-bottom:1cqw;text-align:left">Вставить Offer от хоста:</label>
-            <textarea id="mpPasteOffer" class="pixbtn" style="width:100%;height:60px;margin-bottom:0.5cqw;padding:0.5cqw;background:var(--panel);border:0;box-shadow:0 0 0 3px #000,0 0 0 6px var(--line);color:var(--ink);font-family:var(--font-pix);font-size:0.7em" placeholder="Вставьте Offer JSON сюда"></textarea>
-            <button type="button" class="pixbtn primary" id="btnPasteOfferCreateAnswer">Вставить Offer и создать Answer</button>
-            <p class="sub" style="margin-top:0.5cqw">Ваш Answer готов. Скопируйте и верните хосту.</p>
-            <button type="button" class="pixbtn primary" id="btnCopyAnswer">Скопировать Answer</button>
-            <button type="button" class="pixbtn" id="btnCancelClient" style="margin-top:0.5cqw">Отмена</button>
-            <p class="sub" id="mpClientStatus"></p>
-          </div>
-
-          <!-- Подключено -->
-          <div id="mpConnected" hidden>
-            <p class="good">Игрок подключён!</p>
-            <button type="button" class="pixbtn primary" id="btnStartMP">Начать игру</button>
-            <button type="button" class="pixbtn" id="btnDisconnect">Отключиться</button>
-          </div>
-
-          <button type="button" class="pixbtn" id="btnBackFromMP" style="margin-top:2cqw">Назад</button>
         </div>
       </div>
       <div class="ov" id="ovPause" hidden>
@@ -368,6 +323,7 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
             <button type="button" class="pixbtn" id="btnFullP">Во весь экран</button>
             <button type="button" class="pixbtn" id="btnSnd">Звук: вкл</button>
             <button type="button" class="pixbtn" id="btnTouch">Сенсорные кнопки: авто</button>
+            <button type="button" class="pixbtn" id="btnMouse">Чувствительность мыши: 3/5</button>
             <button type="button" class="pixbtn" id="btnRestart">Заново</button>
           </div>
           <p class="sub">Esc, P или Start закрывают паузу. Прогресс сохраняется при спуске на новый этаж.</p>
@@ -383,7 +339,7 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
       <div class="ov" id="ovWin" hidden>
         <div class="ov-in">
           <h2>Победа!</h2>
-          <p>Король-Лич рассыпался в прах, а Катакомбы Пикселя снова стали тихими. Пять миров спасены, а старец будет петь о тебе песни.</p>
+          <p>Король-Лич рассыпался в прах, а Катакомбы Пикселя снова стали тихими. Девять миров спасены, а старец будет петь о тебе песни.</p>
           <p class="sub" id="winStats"></p>
           <button type="button" class="pixbtn primary" id="btnAgain">К началу</button>
         </div>
@@ -401,7 +357,7 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
       </div>
     </div>
   </div>
-  <p class="legend"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ходьба · <kbd>←</kbd><kbd>→</kbd> или перетаскивание мышью: поворот · <kbd>Пробел</kbd> удар · <kbd>F</kbd> магия · <kbd>Q</kbd><kbd>C</kbd> заклинание · <kbd>E</kbd> действие · <kbd>Tab</kbd> рюкзак · <kbd>H</kbd> <kbd>R</kbd> зелья · <kbd>G</kbd> полный экран · <kbd>Esc</kbd> пауза. Геймпад подключается автоматически.</p>
+  <p class="legend"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ходьба · <kbd>←</kbd><kbd>→</kbd> или мышь: поворот (в полном экране мышь управляет обзором, как в шутерах; ЛКМ удар, ПКМ магия) · <kbd>Пробел</kbd> удар · <kbd>F</kbd> магия · <kbd>Q</kbd><kbd>C</kbd> заклинание · <kbd>E</kbd> действие · <kbd>Tab</kbd> рюкзак · <kbd>H</kbd> <kbd>R</kbd> зелья · <kbd>G</kbd> полный экран · <kbd>Esc</kbd> пауза. Геймпад подключается автоматически.</p>
 </div>
 <script>
 (() => {
@@ -491,7 +447,7 @@ const VARIANT = {
     return c;
   }
 };
-function doorTex(locked, frame) {
+function doorTex(locked, frame, body) {
   return tex((x, y) => {
     if (x < 2 || x > 29 || y < 2) return add(frame, (hash(x, y, 4) - 0.5) * 14);
     const p = (x / 8) | 0, n = (hash(x, y, 7) - 0.5) * 10;
@@ -508,7 +464,7 @@ function doorTex(locked, frame) {
       }
       return c;
     }
-    let c = [128, 84, 48];
+    let c = body ? body.slice() : [128, 84, 48];
     c = add(c, (p % 2 ? 8 : -6) + n + Math.sin(y * 0.9 + p * 3) * 4);
     if (x % 8 === 0 || x % 8 === 7) c = [60, 38, 26];
     if ((y >= 6 && y <= 8) || (y >= 24 && y <= 26)) { c = [74, 76, 92]; if (y === 6) c = [110, 112, 130]; if (x % 8 === 3 && y === 7) c = [168, 168, 190]; }
@@ -588,13 +544,11 @@ const BIOMES = [
     torch: { core: [235, 255, 205], mid: [150, 90, 255], out: [90, 40, 190], glow: [56, 22, 96] } }
 ];
 const BIOME_CACHE = {};
-function biomeTex(i) {
-  if (BIOME_CACHE[i]) return BIOME_CACHE[i];
-  const b = BIOMES[i];
+function classicTex(b) {
   const wall = bricks(b.seed, b.wall, b.mortar, b.brick || {});
   const wall2 = overlay(wall, VARIANT[b.variant](b.seed));
   const hall = bricks(b.seed + 5, b.hallWall, b.hallMortar);
-  const t = {
+  return {
     walls: {
       '#': wall, 'M': wall2, 'B': hall, 'D': doorTex(false, b.door), 'L': doorTex(true, b.door),
       '>': stairsTex(wall, b.rim), 'T': [torchTex(0, wall, b.torch), torchTex(1, wall, b.torch)]
@@ -603,8 +557,470 @@ function biomeTex(i) {
     floorS: checkerTex(b.hall[0], b.hall[1], b.seed),
     ceilT: ceilTex(b.ceil), fogC: b.fog, fog: b.fogDist
   };
-  return (BIOME_CACHE[i] = t);
 }
+function biomeTex(i) {
+  if (BIOME_CACHE[i]) return BIOME_CACHE[i];
+  const b = BIOMES[i];
+  return (BIOME_CACHE[i] = decorateTex(b, b.gen ? b.gen(b) : classicTex(b)));
+}
+
+/* ============ НОВЫЕ БИОМЫ: чаща, гробницы, затонувший храм, цех; декор стен, колонны, пятна на полу ============ */
+const TAU = Math.PI * 2, S32 = TAU / TS;
+const fbm = (x, y, s) => vnoise(x, y, s, 16) * 0.5 + vnoise(x, y, s + 1, 8) * 0.3 + vnoise(x, y, s + 2, 4) * 0.2;
+const shadeCol = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+const roundK = x => 0.6 + 0.52 * Math.cos((x - 15.5) / 16 * 1.3);
+const inRect = (x, y, x0, y0, x1, y1) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+const inEll = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+
+/* ---------- лампы на стенах: разные у каждого мира ---------- */
+function lampTex(frame, wall, T, style) {
+  return tex((x, y) => {
+    let c = unp(wall[y * TS + x]);
+    const dx = x - 16, dy = y - 12, glow = clamp(1 - Math.hypot(dx, dy) / (style === 'brazier' ? 18 : 15), 0, 1);
+    c = [c[0] + glow * T.glow[0], c[1] + glow * T.glow[1], c[2] + glow * T.glow[2]];
+    if (style === 'lantern') {
+      if (x === 16 && y >= 1 && y <= 6) return [58, 44, 30];
+      if (inRect(x, y, 12, 6, 19, 7)) return [88, 62, 34];
+      if (inRect(x, y, 12, 8, 19, 18)) {
+        if (x === 12 || x === 19 || y === 18) return [74, 52, 30];
+        const k = Math.hypot(x - 15.5, y - 13.5 + frame * 0.5) / 5;
+        return k < 0.45 ? T.core : k < 0.85 ? T.mid : T.out;
+      }
+      if (inRect(x, y, 13, 19, 18, 20)) return [74, 52, 30];
+      return c;
+    }
+    if (style === 'brazier') {
+      if (y >= 21 && y <= 26 && Math.abs(x - 15.5) <= 7 - (26 - y) * 0.4) return y === 21 ? [232, 186, 80] : add([158, 108, 44], (hash(x, y, 3) - 0.5) * 22);
+      if (inRect(x, y, 14, 27, 17, 29)) return [96, 72, 40];
+      const fx = dx + (frame ? 0.8 : 0) * ((y & 1) ? 1 : -1) * 0.5, fy = y - 13 - frame * 0.6, w = 6.2 - Math.max(0, -fy) * 0.5;
+      if (y <= 20 && y >= 3 && Math.abs(fx) < w * clamp((20 - y) / 8, 0.25, 1)) return Math.abs(fx) < w * 0.45 ? T.core : Math.abs(fx) < w * 0.78 ? T.mid : T.out;
+      return c;
+    }
+    if (style === 'jelly') {
+      const by = 11 + frame * 0.8, bd = Math.hypot((x - 15.5) / 7.5, (y - by) / 6);
+      if (y <= by + 1 && bd <= 1) return bd < 0.45 ? T.core : bd < 0.8 ? T.mid : T.out;
+      if (y > by && y < by + 3 && Math.abs(x - 15.5) < 6.5) return T.mid;
+      if (y >= by + 3 && y < 27 && (x === 11 || x === 14 || x === 17 || x === 20) && Math.round(Math.sin(y * 0.8 + x + frame * 2.4)) <= 0) return mix(T.out, T.mid, (27 - y) / 20);
+      return c;
+    }
+    if (style === 'bulb') {
+      if (inRect(x, y, 14, 2, 17, 6)) return [52, 56, 70];
+      if (inRect(x, y, 10, 7, 21, 7)) return [70, 74, 90];
+      const bd = Math.hypot(x - 15.5, y - 14);
+      if (bd <= 6.5) {
+        if (bd >= 5.4 || (x % 4 === 0 && bd > 3)) return [40, 42, 54];
+        return bd < 2.5 + frame * 0.5 ? T.core : bd < 4.2 ? T.mid : T.out;
+      }
+      return c;
+    }
+    return c;
+  });
+}
+
+/* ---------- ЧАЩА ---------- */
+function barkWall(seed, o) {
+  const thr = o.thr || 0.62;
+  return tex((x, y) => {
+    const lx = x & 7;
+    let c = mix(o.barkA, o.barkB, hash(x >> 3, 3, seed));
+    c = add(c, (hash(x, y >> 2, seed + 1) - 0.5) * 26 + (hash(x, y, seed + 2) - 0.5) * 10 + [-26, -10, 0, 8, 12, 6, -4, -22][lx]);
+    if (o.birch && hash(x >> 1, y >> 2, seed + 5) > 0.88 && lx > 0) c = mix(c, [34, 30, 28], 0.8);
+    if (lx === 0) c = shadeCol(o.barkA, 0.4);
+    const lf = vnoise(x, y, seed + 7, 8) * 0.7 + hash(x, y, seed + 8) * 0.3 + (1 - y / TS) * 0.14;
+    if (lf > thr) { const k = clamp((lf - thr) * 5, 0, 1); c = mix(c, mix(o.leafA, o.leafB, hash(x >> 1, y >> 1, seed + 9)), k * 0.92); }
+    return c;
+  });
+}
+VARIANT.vines = s => (x, y, c) => {
+  const len = 8 + hash(x, 1, s + 3) * 22;
+  if (hash(x, 0, s + 3) > 0.62 && y < len) return ((x * 3 + y) % 7 === 0) ? [100, 176, 64] : mix(c, [40, 112, 46], 0.9);
+  if (hash(x, y, s + 5) > 0.992) return hash(x + 1, y, s) > 0.5 ? [244, 130, 176] : [250, 224, 110];
+  return c;
+};
+const grassTex = seed => tex((x, y) => {
+  let c = mix([38, 80, 34], [74, 124, 48], vnoise(x, y, seed, 8));
+  c = add(c, (hash(x, y, seed + 1) - 0.5) * 16);
+  if (hash(x, y >> 1, seed + 2) > 0.9) c = add(c, 20);
+  const f = hash(x, y, seed + 3);
+  if (f > 0.988) return [252, 232, 120]; if (f < 0.008) return [242, 134, 176];
+  return c;
+});
+const dirtTex = seed => tex((x, y) => {
+  let c = mix([92, 66, 42], [124, 92, 58], fbm(x, y, seed));
+  c = add(c, (hash(x, y, seed + 1) - 0.5) * 14);
+  if (hash(x, y, seed + 2) > 0.97) return [150, 140, 126];
+  return c;
+});
+const pondTex = (seed, f) => tex((x, y) => {
+  const a = Math.sin(x * S32 * 2 + f * TAU / 4 + Math.sin(y * S32 * 3) * 1.3), b = Math.sin(y * S32 * 2 - f * TAU / 4 + Math.sin(x * S32 * 2) * 1.2), v = a * b;
+  let c = mix([30, 86, 100], [54, 130, 140], fbm(x, y, seed) * 0.8);
+  if (v > 0.6) c = mix(c, [190, 240, 240], (v - 0.6) * 1.4);
+  return c;
+});
+const canopyTex = seed => tex((x, y) => {
+  let c = mix([18, 46, 22], [36, 88, 38], fbm(x, y, seed));
+  c = add(c, (hash(x, y, seed + 1) - 0.5) * 14);
+  const d = vnoise(x, y, seed + 4, 8);
+  if (d > 0.7) c = mix(c, [208, 232, 120], clamp((d - 0.7) * 3.2, 0, 0.85));
+  return c;
+});
+function genForest(b) {
+  const s = b.seed;
+  const wall = barkWall(s, { barkA: [58, 38, 22], barkB: [108, 76, 44], leafA: [32, 90, 38], leafB: [90, 162, 58], thr: 0.64 });
+  const hall = barkWall(s + 5, { barkA: [186, 180, 162], barkB: [228, 222, 202], leafA: [212, 148, 36], leafB: [250, 210, 72], thr: 0.5, birch: true });
+  const T = { core: [255, 248, 180], mid: [255, 206, 84], out: [196, 124, 38], glow: [72, 58, 16] };
+  const grass = grassTex(s + 20);
+  return {
+    walls: { '#': wall, M: overlay(wall, VARIANT.vines(s)), B: hall, D: doorTex(false, [72, 60, 34], [104, 74, 40]), L: doorTex(true, [72, 60, 34]), '>': stairsTex(wall, [152, 120, 72]), T: [0, 1].map(f => lampTex(f, wall, T, 'lantern')) },
+    floorT: grass, floorF: [grass], patchF: [[dirtTex(s + 30)], [0, 1, 2, 3].map(f => pondTex(s + 40, f))],
+    floorS: checkerTex([172, 132, 42], [136, 98, 30], s), ceilT: canopyTex(s + 50), ceilMode: 'tex', ceilLit: false, fogC: [10, 28, 14], fog: 8.2
+  };
+}
+
+/* ---------- ПЕСЧАНЫЕ ГРОБНИЦЫ ---------- */
+const sandstone = seed => overlay(bricks(seed, [206, 172, 114], [126, 96, 58], { rowH: 8, bw: 16, vr: 22 }), (x, y, c) => {
+  const g = hash(x, y, seed + 4); return g > 0.93 ? add(c, -26) : g < 0.04 ? add(c, 14) : c;
+});
+const GLY = [
+  ['....', '.##.', '#..#', '#.##', '#..#', '.##.', '....', '....'], ['.##.', '#..#', '.##.', '..#.', '.###', '..#.', '..#.', '....'],
+  ['....', '#..#', '####', '#..#', '....', '####', '....', '....'], ['....', '..#.', '.###', '..#.', '#.#.', '.#..', '#...', '....'],
+  ['#...', '##..', '###.', '####', '###.', '##..', '#...', '....'], ['#.#.', '.#.#', '#.#.', '.#.#', '#.#.', '.#.#', '#.#.', '.#.#']];
+VARIANT.glyph = s => (x, y, c) => {
+  if (y === 11 || y === 20) return [228, 186, 66];
+  if (y >= 12 && y <= 19) {
+    if (GLY[(hash(x >> 2, 7, s) * 6) | 0][y - 12][x & 3] === '#') return [38, 192, 176];
+    return mix(c, [150, 110, 62], 0.4);
+  }
+  return c;
+};
+const goldHall = seed => tex((x, y) => {
+  if (x % 16 === 0 || y % 16 === 0) return [112, 78, 22];
+  let c = [218, 174, 60];
+  if (y >= 13 && y <= 18) c = (y === 13 || y === 18) ? [244, 210, 96] : [34, 62, 150];
+  if (Math.abs((x & 15) - 8) + Math.abs((y & 15) - 8) <= 2) c = [34, 62, 150];
+  return add(c, (hash(x, y, seed) - 0.5) * 14 + ((x & 15) === 1 || (y & 15) === 1 ? 10 : 0));
+});
+const sandFloor = (seed, a, b, rip) => tex((x, y) => {
+  const n = fbm(x, y, seed);
+  let c = mix(a, b, n); c = add(c, Math.sin((y + n * 8) * S32 * 3) * rip + (hash(x, y, seed + 1) - 0.5) * 10);
+  return hash(x, y, seed + 2) > 0.985 ? add(c, -34) : c;
+});
+/* небо вместо потолка: градиент, облака, звёзды, закатное солнце */
+function makeSky(o) {
+  const grad = new Uint32Array(RH + 2), vrow = new Uint8Array(RH + 2);
+  for (let p = 0; p <= RH + 1; p++) {
+    const k = Math.pow(clamp(p / 100, 0, 1), 0.8), c = k < 0.5 ? mix(o.horizon, o.mid, k * 2) : mix(o.mid, o.zenith, (k - 0.5) * 2);
+    grad[p] = pack(c[0], c[1], c[2]); vrow[p] = Math.min(31, (Math.sqrt(p) * 3.1) | 0);
+  }
+  const CW = 128, CH = 32, cloud = new Uint8Array(CW * CH), stars = new Uint8Array(CW * CH);
+  const wn = (x, y, s, f) => {
+    const gx = x / f, gy = y / f, x0 = Math.floor(gx), y0 = Math.floor(gy), fx = gx - x0, fy = gy - y0, mx = CW / f, my = Math.max(1, CH / f);
+    const n = (i, j) => hash(((x0 + i) % mx + mx) % mx, ((y0 + j) % my + my) % my, s);
+    return (n(0, 0) + (n(1, 0) - n(0, 0)) * fx) * (1 - fy) + (n(0, 1) + (n(1, 1) - n(0, 1)) * fx) * fy;
+  };
+  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+    cloud[y * CW + x] = clamp((wn(x, y * 2, 7, 16) * 0.6 + wn(x, y * 2, 8, 8) * 0.4) * 255, 0, 255);
+    stars[y * CW + x] = hash(x, y, 91) > 0.986 ? 255 : hash(x, y, 92) > 0.97 ? 120 : 0;
+  }
+  return { grad, vrow, cloud, stars, cloudCol: o.cloud, thr: o.thr || 150, cloudA: o.cloudA || 0.6, sun: o.sun || null, starFrom: o.starFrom || 40 };
+}
+function genDesert(b) {
+  const s = b.seed;
+  const wall = sandstone(s), T = { core: [255, 250, 190], mid: [255, 190, 70], out: [226, 100, 30], glow: [96, 60, 14] };
+  const sand = sandFloor(s + 20, [216, 186, 122], [188, 156, 96], 6);
+  return {
+    walls: { '#': wall, M: overlay(wall, VARIANT.glyph(s)), B: goldHall(s + 5), D: doorTex(false, [184, 146, 62], [196, 148, 70]), L: doorTex(true, [184, 146, 62]), '>': stairsTex(wall, [236, 196, 84]), T: [0, 1].map(f => lampTex(f, wall, T, 'brazier')) },
+    floorT: sand, floorF: [sand],
+    patchF: [[floorTex(s + 30, [190, 158, 104], [176, 144, 94], [116, 88, 52])], [sandFloor(s + 40, [226, 198, 134], [204, 172, 108], 11)]],
+    floorS: checkerTex([212, 168, 52], [36, 58, 140], s), ceilT: ceilTex([60, 40, 60]), ceilMode: 'sky', ceilLit: true,
+    sky: makeSky({ horizon: [255, 150, 72], mid: [178, 80, 104], zenith: [30, 22, 74], cloud: [255, 188, 150], thr: 138, cloudA: 0.62, sun: { ang: 0.55, h: 34, r: 12 }, starFrom: 38 }),
+    fogC: [76, 44, 26], fog: 10.5
+  };
+}
+
+/* ---------- ЗАТОНУВШИЙ ХРАМ ---------- */
+VARIANT.coral = s => (x, y, c) => {
+  const m = vnoise(x, y, s + 3, 8) * 0.7 + hash(x, y, s) * 0.3 + (y / TS) * 0.12;
+  if (m > 0.78) return mix(c, hash(x >> 3, y >> 3, s + 1) > 0.5 ? [224, 112, 124] : [232, 152, 92], clamp((m - 0.78) * 7, 0, 0.92));
+  if (y > 22 && vnoise(x, y, s + 5, 4) > 0.62) return mix(c, [40, 120, 82], 0.7);
+  if (hash(x, y, s + 8) > 0.985) return [226, 240, 236];
+  return c;
+};
+const nacreHall = seed => tex((x, y) => {
+  if (x % 16 === 0 || y % 8 === 0) return [142, 120, 160];
+  const v = Math.sin((x + y * 0.6) * S32 * 2) * 0.5 + 0.5;
+  return add(mix([232, 214, 232], [196, 232, 240], v), (hash(x, y, seed) - 0.5) * 10);
+});
+const mosaic = (seed, pal) => tex((x, y) => {
+  if ((x & 3) === 0 || (y & 3) === 0) return [18, 46, 56];
+  const c = pal[(hash(x >> 2, y >> 2, seed) * pal.length) | 0];
+  return add(c, (hash(x, y, seed + 1) - 0.5) * 10);
+});
+const caustic = (base, f) => overlay(base, (x, y, c) => {
+  const a = Math.sin(x * S32 * 2 + f * TAU / 4 + Math.sin(y * S32 * 3 + f * TAU / 4) * 1.4), b = Math.sin(y * S32 * 2 - f * TAU / 4 + Math.sin(x * S32 * 2) * 1.2), v = a * b;
+  if (v > 0.55) return [c[0] + 30, c[1] + 48, c[2] + 40];
+  return v < -0.75 ? [c[0] - 8, c[1] - 8, c[2] - 6] : c;
+});
+const waterCeil = f => tex((x, y) => {
+  const a = Math.sin(x * S32 * 3 + f * TAU / 4 + Math.sin(y * S32 * 2) * 1.6), b = Math.sin(y * S32 * 3 + f * TAU / 4 + Math.sin(x * S32 * 2 + f) * 1.4), v = (a + b) / 2;
+  let c = mix([22, 84, 138], [64, 172, 212], clamp(v * 0.5 + 0.5, 0, 1));
+  return v > 0.8 ? mix(c, [204, 246, 255], (v - 0.8) * 4) : c;
+});
+function genSunken(b) {
+  const s = b.seed;
+  const wall = bricks(s, [84, 130, 138], [28, 62, 70], { vr: 30 }), T = { core: [230, 255, 255], mid: [110, 230, 240], out: [40, 130, 200], glow: [16, 70, 96] };
+  const mos = mosaic(s + 20, [[46, 110, 132], [58, 132, 150], [38, 90, 118], [70, 150, 160]]);
+  const floorF = [0, 1, 2, 3].map(f => caustic(mos, f));
+  const silt = tex((x, y) => add(mix([150, 150, 112], [124, 130, 100], fbm(x, y, s + 31)), (hash(x, y, s + 32) - 0.5) * 12));
+  const weed = tex((x, y) => add(mix([34, 96, 70], [60, 130, 80], fbm(x, y, s + 41)), (hash(x, y >> 1, s + 42) > 0.88 ? 18 : 0) + (hash(x, y, s + 43) - 0.5) * 10));
+  return {
+    walls: { '#': wall, M: overlay(wall, VARIANT.coral(s)), B: nacreHall(s + 5), D: doorTex(false, [60, 110, 118], [64, 118, 112]), L: doorTex(true, [60, 110, 118]), '>': stairsTex(wall, [190, 236, 240]), T: [0, 1].map(f => lampTex(f, wall, T, 'jelly')) },
+    floorT: floorF[0], floorF, patchF: [[silt], [weed]],
+    floorS: checkerTex([226, 212, 228], [150, 210, 224], s), ceilT: waterCeil(0), ceilF: [0, 1, 2, 3].map(waterCeil), ceilMode: 'water', ceilLit: true,
+    fogC: [4, 30, 46], fog: 8
+  };
+}
+
+/* ---------- ЗАВОДСКОЙ ЦЕХ ---------- */
+const steelPlates = seed => tex((x, y) => {
+  const px = x & 15, py = y & 15, pid = (x >> 4) + (y >> 4) * 2, tone = (hash(pid, 5, seed) - 0.5) * 22;
+  if (px === 0 || py === 0) return [26, 28, 38];
+  let c = add([94, 104, 122], tone + (hash(x, y, seed + 1) - 0.5) * 8 + (hash(0, y, seed + 2) > 0.8 ? 6 : 0));
+  if (px === 1 || py === 1) c = add(c, 22); else if (px === 15 || py === 15) c = add(c, -22);
+  if ((px === 3 || px === 12) && (py === 3 || py === 12)) return (x & 1) || (y & 1) ? [170, 178, 196] : [48, 52, 64];
+  if (pid % 3 === 1 && py >= 6 && py <= 10 && px >= 4 && px <= 11 && py % 2 === 0) return [30, 32, 42];
+  return c;
+});
+VARIANT.rust = s => (x, y, c) => {
+  const m = vnoise(x, y, s + 3, 8) * 0.7 + hash(x, y, s) * 0.3;
+  if (m > 0.68) c = mix(c, hash(x >> 1, y >> 1, s + 2) > 0.5 ? [152, 82, 40] : [118, 62, 34], clamp((m - 0.68) * 5, 0, 0.9));
+  if (hash(x, 4, s) > 0.8 && y > 14 && y < 14 + hash(x, 5, s) * 16) return mix(c, [128, 70, 36], 0.7);
+  return c;
+};
+const hazardHall = seed => tex((x, y) => {
+  if (x % 16 === 0 || y % 16 === 0) return [24, 12, 12];
+  if (y >= 12 && y <= 19) return ((x + y) >> 2) & 1 ? [236, 190, 30] : [30, 28, 34];
+  let c = add([112, 40, 36], (hash(x, y, seed) - 0.5) * 12);
+  if (y === 4 || y === 27) c = [255, 140, 40];
+  return c;
+});
+const grating = seed => tex((x, y) => {
+  const gx = x & 7, gy = y & 7, bar = gx < 2 || gy < 2;
+  if (bar) return add(gx === 0 || gy === 0 ? [96, 104, 120] : [64, 70, 84], (hash(x, y, seed) - 0.5) * 8);
+  const g = 0.5 + hash(x >> 3, y >> 3, seed + 1) * 0.5, d = Math.hypot(gx - 4.5, gy - 4.5) / 3.2;
+  return mix([26, 14, 12], [150, 62, 20], clamp((1 - d) * g, 0, 1));
+});
+const oilTex = seed => tex((x, y) => {
+  let c = mix([14, 14, 20], [30, 28, 40], fbm(x, y, seed));
+  if (hash(x >> 1, y, seed + 2) > 0.94 && (x + y) % 5 < 2) c = [92, 80, 120];
+  return c;
+});
+const hazardPlate = seed => tex((x, y) => {
+  if (x % 16 === 0 || y % 16 === 0) return [24, 24, 30];
+  return add(((x + y) >> 2) & 1 ? [220, 176, 30] : [34, 32, 38], (hash(x, y, seed) - 0.5) * 10);
+});
+const pipeCeil = seed => tex((x, y) => {
+  let c = add([34, 34, 44], (hash(x, y, seed) - 0.5) * 8);
+  if (y >= 3 && y <= 9) { const k = [0, 40, 70, 90, 80, 60, 30][y - 3]; c = [60 + k, 66 + k, 82 + k]; }
+  else if (y >= 18 && y <= 24) { const k = [0, 30, 60, 76, 64, 44, 20][y - 18]; c = [120 + k, 70 + k * 0.6, 32 + k * 0.3]; }
+  if (x % 16 === 0 || x % 16 === 1) c = add(c, -22);
+  if ((x % 16 === 3) && (y === 5 || y === 21)) c = [190, 196, 210];
+  return c;
+});
+function genWorks(b) {
+  const s = b.seed;
+  const wall = steelPlates(s), T = { core: [255, 255, 220], mid: [255, 190, 70], out: [220, 90, 30], glow: [90, 54, 16] };
+  const gr = grating(s + 20);
+  return {
+    walls: { '#': wall, M: overlay(wall, VARIANT.rust(s)), B: hazardHall(s + 5), D: doorTex(false, [58, 62, 78], [104, 112, 128]), L: doorTex(true, [58, 62, 78]), '>': stairsTex(wall, [236, 150, 50]), T: [0, 1].map(f => lampTex(f, wall, T, 'bulb')) },
+    floorT: gr, floorF: [gr], patchF: [[oilTex(s + 30)], [hazardPlate(s + 40)]],
+    floorS: checkerTex([220, 176, 30], [42, 40, 48], s), ceilT: pipeCeil(s + 50), ceilMode: 'tex', ceilLit: false, fogC: [20, 15, 11], fog: 8.6
+  };
+}
+
+/* ---------- КОЛОННЫ ---------- */
+function pillarTex(wall, o = {}) {
+  return tex((x, y) => {
+    let c = unp((o.base || wall)[y * TS + x]); const k = roundK(x); c = [c[0] * k, c[1] * k, c[2] * k];
+    if (o.band) { if (y < 4 || y > 27) c = mix(c, o.band, 0.75); if (y === 4 || y === 27) c = shadeCol(o.band, 0.55); }
+    return o.fn ? o.fn(x, y, c) : c;
+  });
+}
+const PILLAR = {
+  crypt: (b, w) => pillarTex(w, { band: [152, 144, 160], fn: (x, y, c) => (x % 6 === 0 ? shadeCol(c, 0.7) : c) }),
+  cave: (b, w) => pillarTex(w, { fn: VARIANT.fungus(b.seed + 2) }),
+  fire: (b, w) => pillarTex(w, { band: [30, 20, 24], fn: (x, y, c) => { const v = Math.abs(vnoise(x, y, b.seed + 9, 8) - 0.5); return v < 0.04 ? [255, 160, 54] : v < 0.08 ? mix(c, [200, 80, 26], 0.6) : c; } }),
+  ice: (b, w) => pillarTex(w, { fn: (x, y, c) => mix(c, [236, 248, 255], 0.3 + hash(x >> 1, 0, 4) * 0.25) }),
+  throne: (b, w) => pillarTex(w, { band: [170, 130, 210], fn: (x, y, c) => (y >= 8 && y <= 24 && y % 6 < 2 && hash(x >> 1, y >> 3, b.seed) > 0.4 ? [180, 112, 255] : c) }),
+  forest: (b, w) => pillarTex(barkWall(b.seed + 11, { barkA: [48, 32, 20], barkB: [92, 64, 38], leafA: [30, 84, 36], leafB: [80, 150, 54], thr: 1.2 }), { fn: (x, y, c) => (y > 24 && vnoise(x, y, 3, 4) > 0.5 ? mix(c, [48, 120, 50], 0.7) : c) }),
+  desert: (b, w) => pillarTex(w, { band: [236, 196, 84], fn: (x, y, c) => (x % 5 === 0 ? shadeCol(c, 0.78) : c) }),
+  sunken: (b, w) => pillarTex(w, { band: [190, 236, 240], fn: VARIANT.coral(b.seed + 4) }),
+  works: (b, w) => pillarTex(w, { fn: (x, y, c) => {
+    if (y % 8 === 0) return shadeCol(c, 0.45);
+    if ((x === 5 || x === 26) && y % 8 === 3) return [190, 196, 214];
+    if (inEll(x, y, 16, 14, 5, 5)) return inEll(x, y, 16, 14, 4, 4) ? ((x === 16 || y === 14) ? [40, 40, 50] : [214, 220, 196]) : [60, 64, 80];
+    return c;
+  } })
+};
+
+/* ---------- ДЕКОР СТЕН: два мотива на мир ---------- */
+const mBanner = (cloth, trim, emb) => (x, y, c) => {
+  if (inRect(x, y, 8, 2, 23, 3)) return y === 2 ? [158, 124, 62] : [92, 66, 34];
+  const bottom = 22 + Math.abs(x - 15.5) * 0.9;
+  if (x >= 10 && x <= 21 && y >= 4 && y <= bottom) {
+    if (x === 10 || x === 21 || y === 4) return trim;
+    const d = Math.abs(x - 15.5) + Math.abs(y - 13);
+    if (d <= 4.4) return d <= 2.6 ? shadeCol(cloth, 0.55) : emb;
+    return x % 4 < 2 ? cloth : shadeCol(cloth, 0.82);
+  }
+  return c;
+};
+const mNiche = (glow, ink) => (x, y, c) => {
+  if (inRect(x, y, 10, 9, 21, 26) && (y >= 12 || inEll(x, y, 15.5, 12, 6, 4))) {
+    if (inRect(x, y, 12, 14, 19, 22)) {
+      if (inEll(x, y, 15.5, 17, 3.5, 3.4) && !(inRect(x, y, 13, 16, 14, 17) || inRect(x, y, 17, 16, 18, 17))) return glow;
+      if (inRect(x, y, 14, 20, 17, 22)) return mix(glow, ink, 0.4);
+    }
+    return mix(ink, c, 0.15);
+  }
+  return c;
+};
+const mVein = (col, hot) => (x, y, c) => {
+  const cx = 16 + Math.sin(y * 0.36 + 1) * 6 + Math.sin(y * 1.1) * 1.4, d = Math.abs(x - cx);
+  if (d < 1.0) return hot; if (d < 2.4) return mix(c, col, 0.75); if (d < 3.4) return mix(c, col, 0.28);
+  return c;
+};
+const mIcicles = col => (x, y, c) => {
+  const len = 5 + hash(x >> 1, 1, 6) * 12 + Math.abs(Math.sin(x * 0.7)) * 5;
+  if (y < len && ((x & 3) !== 3)) return y < len - 3 ? mix(c, col, 0.55) : [236, 250, 255];
+  return c;
+};
+const mFrozen = col => (x, y, c) => {
+  if (inEll(x, y, 16, 16, 9, 12)) {
+    if (inEll(x, y, 16, 16, 6, 8) && !inEll(x, y, 16, 12, 3, 3)) return mix([60, 70, 90], col, 0.35);
+    return mix(c, [210, 238, 255], 0.45 + 0.2 * Math.sin((x + y) * 0.5));
+  }
+  return c;
+};
+const mSigil = col => (x, y, c) => {
+  const d = Math.hypot(x - 15.5, y - 15.5);
+  if (Math.abs(d - 10) < 0.8 || (d < 5.2 && d > 4.2)) return col;
+  if ((Math.abs(x - 15.5) < 0.8 && d < 10) || (Math.abs(y - 15.5) < 0.8 && d < 10)) return mix(c, col, 0.8);
+  if (Math.abs(Math.abs(x - 15.5) - Math.abs(y - 15.5)) < 0.7 && d < 5) return col;
+  return c;
+};
+const mTapestry = (cloth, trim) => (x, y, c) => {
+  if (inRect(x, y, 7, 3, 24, 28)) {
+    if (x === 7 || x === 24 || y === 3 || y === 28) return trim;
+    if (y >= 9 && y <= 23 && Math.abs(x - 15.5) < (y < 16 ? y - 8 : 24 - y) * 0.75) return mix(cloth, trim, 0.6);
+    return (x + y) % 6 < 3 ? cloth : shadeCol(cloth, 0.8);
+  }
+  return c;
+};
+const mHollow = eye => (x, y, c) => {
+  if (inEll(x, y, 16, 16, 8, 11)) {
+    if ((inRect(x, y, 11, 12, 13, 14) || inRect(x, y, 18, 12, 20, 14))) return eye;
+    return shadeCol(mix(c, [10, 8, 6], 0.85), 1);
+  }
+  if (inEll(x, y, 16, 16, 10, 13)) return mix(c, [40, 26, 16], 0.6);
+  return c;
+};
+const mShelf = (a, bcol) => (x, y, c) => {
+  for (const [sy, sx, w] of [[8, 4, 12], [16, 12, 14], [24, 6, 11]]) {
+    if (y >= sy && y <= sy + 2 && x >= sx && x <= sx + w - Math.abs(y - sy) * 2) return (y === sy ? a : bcol);
+    if (y === sy + 3 && x > sx + 2 && x < sx + w - 3) return [20, 14, 10];
+  }
+  return c;
+};
+const mSun = (rays, core) => (x, y, c) => {
+  const d = Math.hypot(x - 15.5, y - 15.5), a = Math.atan2(y - 15.5, x - 15.5);
+  if (d < 5.6) return d < 3.4 ? core : rays;
+  if (d < 13 && d > 7.5 && Math.cos(a * 8) > 0.55) return rays;
+  if (Math.abs(d - 14) < 0.7) return [228, 186, 66];
+  return c;
+};
+const mGlyphPanel = (g, bg) => (x, y, c) => {
+  if (inRect(x, y, 6, 3, 25, 28)) {
+    if (x === 6 || x === 25 || y === 3 || y === 28) return [228, 186, 66];
+    const gx = (x - 7) >> 2, gy = Math.floor((y - 4) / 8);
+    if (gy < 3 && gx < 5 && GLY[(hash(gx, gy, 5) * 6) | 0][(y - 4) % 8][(x - 7) & 3] === '#') return g;
+    return bg;
+  }
+  return c;
+};
+const mPorthole = (water, fish) => (x, y, c) => {
+  const d = Math.hypot(x - 15.5, y - 15.5);
+  if (d < 6) { if (inEll(x, y, 15 + Math.sin(y) * 0.2, 16, 3, 1.4) || (inRect(x, y, 17, 15, 19, 17) && x > 17)) return fish; return mix(water, [190, 240, 255], clamp((15.5 - y + 6) / 14, 0, 0.7)); }
+  if (d < 8) return d < 7.2 ? [190, 150, 70] : [96, 72, 30];
+  return c;
+};
+const mShells = s => (x, y, c) => {
+  for (let i = 0; i < 6; i++) {
+    const cx = 4 + hash(i, 0, s) * 24, cy = 5 + hash(i, 1, s) * 22, r = 2 + hash(i, 2, s) * 2.6;
+    if (inEll(x, y, cx, cy, r, r * 0.9)) return (Math.floor(Math.atan2(y - cy, x - cx) * 3) & 1) ? [244, 224, 214] : [222, 160, 150];
+  }
+  return c;
+};
+const mGear = (col, hole) => (x, y, c) => {
+  const d = Math.hypot(x - 15.5, y - 15.5), a = Math.atan2(y - 15.5, x - 15.5);
+  if (d < 3) return hole; if (d < 4.4) return shadeCol(col, 0.6);
+  if (d < 9.5 + (Math.cos(a * 8) > 0.2 ? 2.4 : 0)) return d > 8.4 || Math.abs(d - 6.2) < 0.6 ? shadeCol(col, 0.7) : add(col, (x + y) % 5 === 0 ? 14 : 0);
+  return c;
+};
+const mPanel = () => (x, y, c) => {
+  if (inRect(x, y, 6, 5, 25, 26)) {
+    if (x === 6 || x === 25 || y === 5 || y === 26) return [30, 32, 42];
+    if (inRect(x, y, 8, 7, 14, 13)) return inEll(x, y, 11, 10, 3, 3) ? ((x === 11 || y === 10) ? [220, 60, 50] : [226, 236, 220]) : [50, 54, 64];
+    if (inRect(x, y, 17, 7, 23, 13)) return (y - 7) < 3 ? [60, 220, 120] : [30, 60, 40];
+    if (y >= 17 && y <= 24 && (x - 8) % 4 < 3 && x < 24) { const k = (hash(x >> 2, 3, 8) * 4) | 0; return [[230, 60, 50], [250, 200, 50], [60, 220, 120], [60, 150, 240]][k]; }
+    return [58, 62, 76];
+  }
+  return c;
+};
+const DECO = {
+  crypt: [b => mBanner([150, 38, 52], [210, 170, 70], [236, 200, 90]), b => mNiche([236, 232, 214], [14, 10, 20])],
+  cave: [b => mVein([60, 220, 190], [210, 255, 230]), b => (x, y, c) => (x % 5 === 2 && y < 6 + hash(x, 1, 3) * 20 ? mix(c, [70, 52, 34], 0.8) : c)],
+  fire: [b => mVein([220, 90, 30], [255, 220, 100]), b => mNiche([255, 170, 60], [28, 10, 8])],
+  ice: [b => mIcicles([170, 210, 245]), b => mFrozen([150, 180, 230])],
+  throne: [b => mSigil([186, 118, 255]), b => mTapestry([88, 30, 100], [210, 170, 70])],
+  forest: [b => mHollow([255, 220, 90]), b => mShelf([236, 140, 70], [170, 80, 40])],
+  desert: [b => mGlyphPanel([38, 192, 176], [150, 112, 64]), b => mSun([228, 186, 66], [255, 240, 170])],
+  sunken: [b => mPorthole([40, 120, 190], [20, 40, 70]), b => mShells(b.seed)],
+  works: [b => mGear([200, 140, 56], [24, 24, 32]), b => mPanel()]
+};
+
+/* ---------- ПЯТНА НА ПОЛУ у старых миров ---------- */
+const patchTex = (seed, a, b, extra) => tex((x, y) => { let c = mix(a, b, fbm(x, y, seed)); c = add(c, (hash(x, y, seed + 1) - 0.5) * 10); return extra ? extra(x, y, c) : c; });
+const puddle = (seed, f) => tex((x, y) => {
+  const v = Math.sin(x * S32 * 3 + f * TAU / 4 + Math.sin(y * S32 * 2) * 1.2) * Math.sin(y * S32 * 2 + f * TAU / 4);
+  let c = mix([22, 30, 52], [44, 58, 90], fbm(x, y, seed)); if (v > 0.65) c = mix(c, [150, 170, 210], 0.55);
+  return c;
+});
+const PATCHES = {
+  crypt: s => [[0, 1, 2, 3].map(f => puddle(s, f)), [patchTex(s + 3, [44, 60, 38], [64, 84, 46], (x, y, c) => (hash(x, y, s + 9) > 0.96 ? [110, 140, 70] : c))]],
+  cave: s => [[patchTex(s + 1, [30, 70, 58], [52, 108, 84], (x, y, c) => (hash(x, y, s + 4) > 0.96 ? [120, 255, 220] : c))], [0, 1, 2, 3].map(f => puddle(s + 2, f))],
+  fire: s => [[patchTex(s + 1, [30, 22, 22], [50, 34, 30], (x, y, c) => (hash(x, y, s + 4) > 0.95 ? [255, 130, 40] : c))], [patchTex(s + 2, [60, 30, 28], [90, 44, 36], (x, y, c) => (Math.abs(vnoise(x, y, s + 6, 8) - 0.5) < 0.04 ? [255, 160, 50] : c))]],
+  ice: s => [[patchTex(s + 1, [186, 220, 245], [214, 238, 252], (x, y, c) => (Math.abs(vnoise(x, y, s + 6, 8) - 0.5) < 0.03 ? [110, 150, 200] : c))], [patchTex(s + 2, [226, 238, 248], [246, 252, 255])]],
+  throne: s => [[patchTex(s + 1, [10, 6, 22], [24, 12, 44], (x, y, c) => (hash(x, y, s + 4) > 0.97 ? [210, 190, 255] : c))], [patchTex(s + 2, [104, 24, 60], [136, 40, 80], (x, y, c) => (x % 8 === 0 || y % 8 === 0 ? [186, 140, 60] : c))]]
+};
+
+/* оформление текстур мира: колонны, декор стен, пятна на полу */
+function decorateTex(b, t) {
+  const w = t.walls['#'];
+  t.walls.P = PILLAR[b.id](b, w);
+  t.walls.W = overlay(w, DECO[b.id][0](b)); t.walls.V = overlay(w, DECO[b.id][1](b));
+  if (!t.floorF) t.floorF = [t.floorT];
+  if (!t.patchF) t.patchF = PATCHES[b.id](b.seed + 60);
+  if (!t.ceilMode) { t.ceilMode = 'tex'; t.ceilLit = false; }
+  return t;
+}
+
+BIOMES.push(
+  { id: 'forest', name: 'Шепчущая чаща', seed: 61, gen: genForest },
+  { id: 'desert', name: 'Песчаные гробницы', seed: 71, gen: genDesert },
+  { id: 'sunken', name: 'Затонувший храм', seed: 81, gen: genSunken },
+  { id: 'works', name: 'Заводской цех', seed: 91, gen: genWorks }
+);
 
 /* ---------- спрайты 16x16, рисуются строками ---------- */
 const PAL = {
@@ -612,7 +1028,10 @@ const PAL = {
   r: '#d03c3c', R: '#7a1f2c', o: '#ee8a3a', y: '#f4d24c', Y: '#b88a2a',
   n: '#8a5a3a', N: '#5a3626', b: '#4a7ad8', B: '#2a3a8a', c: '#6ad8e8',
   p: '#9a52d8', i: '#bfe8ff', z: '#3ad8b0', v: '#c898ff', t: '#c85a2a', P: '#4a2a7a', l: '#7ad84a', e: '#3a9a3a', E: '#1f5a2a',
-  s: '#e8b88a', S: '#b8845a', m: '#e86a9a', W: '#e0d8c0', h: '#a89f88'
+  s: '#e8b88a', S: '#b8845a', m: '#e86a9a', W: '#e0d8c0', h: '#a89f88',
+  a: '#e6c88a', A: '#b8905a', C: '#2ab8a8', D: '#1a6a74', f: '#f08a7a', F: '#d0505a', H: '#fff0b0', I: '#7a8aa4', J: '#3e485c',
+  K: '#c8782a', L: '#8a4a1c', O: '#ff9a3a', q: '#9ad8f0', Q: '#3a88b8', T: '#7a9a3a', u: '#d8b0f8', U: '#8a5ac8', V: '#2a5a30',
+  x: '#f0e090', X: '#9a3a3a', j: '#d8e4f0', M: '#f0b0d0', Z: '#5a3a6a', '1': '#a8e86a', '2': '#2a7a6a', '3': '#c8a050', '4': '#6a4a2a'
 };
 const PALU = {}; for (const k in PAL) { const h = PAL[k]; PALU[k] = pack(parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)); }
 const SPR_ISSUES = [];
@@ -847,6 +1266,249 @@ const SPARK = RAR_COL.map((col, i) => {
   return canvasSprite(cv);
 });
 
+/* ============ СПРАЙТЫ ЭТАЖЕЙ 3: враги новых миров, снаряды, декор окружения (рисуется кодом) ============ */
+function painter(w = 16, h = 16, seed = 1) {
+  const g = Array.from({ length: h }, () => Array(w).fill('.')), R = rng(seed);
+  const o = {
+    w, h, R,
+    px(x, y, c) { x = Math.round(x); y = Math.round(y); if (c && x >= 0 && y >= 0 && x < w && y < h) g[y][x] = c; return o; },
+    get(x, y) { return (x >= 0 && y >= 0 && x < w && y < h) ? g[y][x] : '.'; },
+    rect(x, y, ww, hh, c) { for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) o.px(x + i, y + j, c); return o; },
+    ell(cx, cy, rx, ry, c) {
+      for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy <= 1) o.px(x, y, c);
+      }
+      return o;
+    },
+    line(x0, y0, x1, y1, c) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) o.px(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, c); return o; },
+    taper(cx, y0, y1, hw0, hw1, c) {
+      for (let y = y0; y <= y1; y++) {
+        const t = (y - y0) / Math.max(1, y1 - y0), hw = hw0 + (hw1 - hw0) * t;
+        for (let x = Math.ceil(cx - hw - 0.001); x <= Math.floor(cx + hw + 0.001); x++) o.px(x, y, c);
+      }
+      return o;
+    },
+    /* заменить цвет a на b справа от линии x (простая тень) */
+    shadeRight(x0, a, b) { for (let y = 0; y < h; y++) for (let x = Math.ceil(x0); x < w; x++) if (g[y][x] === a) g[y][x] = b; return o; },
+    shadeLeft(x0, a, b) { for (let y = 0; y < h; y++) for (let x = 0; x < x0; x++) if (g[y][x] === a) g[y][x] = b; return o; },
+    mirror() { for (let y = 0; y < h; y++) for (let x = 0; x < (w >> 1); x++) if (g[y][x] !== '.' && g[y][w - 1 - x] === '.') g[y][w - 1 - x] = g[y][x]; return o; },
+    speck(x0, y0, ww, hh, c, pr, only) { for (let y = y0; y < y0 + hh; y++) for (let x = x0; x < x0 + ww; x++) if (R() < pr && (!only || o.get(x, y) === only)) o.px(x, y, c); return o; },
+    outline(c = 'k') {
+      const add = [];
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (g[y][x] === '.') {
+        if (o.get(x - 1, y) !== '.' || o.get(x + 1, y) !== '.' || o.get(x, y - 1) !== '.' || o.get(x, y + 1) !== '.') add.push([x, y]);
+      }
+      add.forEach(([x, y]) => { g[y][x] = c; }); return o;
+    },
+    rows() { return g.map(r => r.join('')); }
+  };
+  return o;
+}
+const mk = (name, p) => { SPR[name] = def(name, p.rows(), p.w, p.h); return SPR[name]; };
+const mkv = (name, base, map) => { SPR[name] = def(name, recolor(ROWS[base], map), SPR[base].w, SPR[base].h); return SPR[name]; };
+
+/* ---------- враги чащи ---------- */
+vari('wolf', 'rat', { G: 'h', d: 'G', m: 'N', r: 'y' });
+mk('hornet', painter(16, 16, 3).ell(4, 6, 3.4, 2, 'i').ell(12, 6, 3.4, 2, 'i').ell(8, 9.5, 3, 4.5, 'y').rect(5, 8, 6, 1, 'k').rect(5, 11, 6, 1, 'k').rect(6, 13, 4, 1, 'N')
+  .ell(8, 5, 2.7, 2.4, 'Y').px(7, 4, 'r').px(9, 4, 'r').line(7, 2, 5, 0, 'k').line(9, 2, 11, 0, 'k').px(8, 14, 'k').px(8, 15, 'k').outline());
+mk('wisp', painter(16, 16, 4).taper(8, 1, 6, 0.2, 3.2, 'l').px(4, 4, 'l').px(12, 5, 'l').ell(8, 9.5, 5.2, 5, 'e').ell(8, 9.5, 4.2, 4.1, 'l').ell(8, 9.5, 2.8, 2.8, 'H')
+  .px(6, 9, 'k').px(10, 9, 'k').px(6, 8, 'N').px(10, 8, 'N').rect(7, 11, 2, 1, 'k').outline());
+{
+  const p = painter(16, 16, 11);
+  p.ell(8, 3, 6.5, 3.2, 'E').ell(8, 2.6, 5.6, 2.5, 'e').ell(5.5, 2, 2.3, 1.4, 'l').ell(11, 3.2, 2, 1.2, 'l').px(3, 5, 'e').px(13, 5, 'e')
+    .rect(4, 5, 8, 8, 'N').rect(5, 5, 5, 8, 'n').line(6, 8, 6, 12, 'N').line(9, 6, 9, 10, 'N')
+    .px(5, 7, 'y').px(6, 7, 'y').px(9, 7, 'y').px(10, 7, 'y').px(5, 6, 'k').px(6, 6, 'k').px(9, 6, 'k').px(10, 6, 'k').rect(7, 10, 3, 1, 'k')
+    .line(4, 6, 1, 10, 'N').line(1, 10, 1, 13, 'N').px(0, 13, 'e').px(1, 14, 'e').px(2, 13, 'e').line(11, 6, 14, 10, 'N').line(14, 10, 14, 13, 'N').px(15, 13, 'e').px(14, 14, 'e').px(13, 13, 'e')
+    .rect(4, 13, 3, 2, 'N').rect(9, 13, 3, 2, 'N').px(3, 14, 'N').px(12, 14, 'N').px(7, 14, 'N');
+  mk('treant', p.outline());
+}
+mkv('treeAncient', 'treant', { e: 'o', E: 't', l: 'y', y: 'r', n: 'N', N: '4' });
+
+/* ---------- враги гробниц ---------- */
+mk('scarab', painter(16, 16, 5).line(4, 11, 1, 14, 'k').line(5, 12, 3, 15, 'k').line(11, 12, 13, 15, 'k').line(12, 11, 15, 14, 'k').ell(8, 10, 5.6, 4, 'D').ell(8, 9.5, 4.8, 3.2, 'C')
+  .line(8, 6, 8, 13, 'D').px(5, 8, 'q').px(6, 8, 'q').px(5, 9, 'q').ell(8, 5.5, 2.3, 1.8, 'k').px(6, 3, 'k').px(10, 3, 'k').px(7, 5, 'y').px(9, 5, 'y').outline());
+{
+  const p = painter(16, 16, 6);
+  p.ell(8, 11.5, 4.6, 3, 'A').ell(8, 11, 3.6, 2, 'a').line(11, 10, 13, 6, 'A').line(13, 6, 12, 3, 'A').line(12, 3, 9, 2, 'A').px(8, 2, 'r').px(8, 3, 'r').px(9, 3, 'r')
+    .ell(2.5, 8, 2.4, 1.8, 'a').ell(13.5, 9.5, 1.2, 1, 'a').line(5, 10, 3, 9, 'A').px(6, 10, 'k').px(10, 10, 'k')
+    .line(4, 13, 2, 15, 'A').line(6, 14, 5, 15, 'A').line(10, 14, 11, 15, 'A').line(12, 13, 14, 15, 'A').px(6, 9, 'r').px(10, 9, 'r');
+  mk('scorpion', p.outline());
+}
+vari('mummy', 'skeleton', { W: 'a', h: 'A', r: 'C', k: 'k' });
+vari('djinn', 'ghost', { B: 'D', b: 'C', c: 'y' });
+mk('pharaoh', (() => {
+  const p = painter(16, 16, 8);
+  p.rect(3, 0, 10, 2, 'y').rect(3, 2, 2, 7, 'C').rect(11, 2, 2, 7, 'C').rect(3, 2, 2, 1, 'Y').rect(11, 3, 2, 1, 'Y').rect(3, 5, 2, 1, 'Y').rect(11, 5, 2, 1, 'Y')
+    .rect(5, 2, 6, 6, 'y').rect(6, 3, 4, 3, 'Y').px(6, 4, 'k').px(9, 4, 'k').px(6, 3, 'C').px(9, 3, 'C').rect(7, 6, 2, 1, 'k').rect(7, 8, 2, 2, 'C')
+    .rect(4, 9, 8, 2, 'y').rect(5, 9, 6, 1, 'C').rect(4, 11, 8, 4, 'a').rect(4, 12, 8, 1, 'A').rect(4, 14, 8, 1, 'A').rect(2, 10, 2, 4, 'a').rect(12, 10, 2, 4, 'a').rect(1, 9, 1, 6, 'y').px(2, 9, 'y').px(14, 9, 'y').rect(14, 9, 1, 6, 'C')
+    .rect(5, 15, 2, 1, 'k').rect(9, 15, 2, 1, 'k');
+  return p.outline();
+})());
+
+/* ---------- враги затонувшего храма ---------- */
+{
+  const p = painter(16, 16, 12);
+  p.ell(3, 6, 2.6, 2.4, 'F').ell(13, 6, 2.6, 2.4, 'F').rect(2, 8, 2, 2, 'F').rect(12, 8, 2, 2, 'F').px(3, 3, 'k').px(3, 4, 'F').px(13, 3, 'k').px(13, 4, 'F').px(1, 6, 'k').px(15, 6, 'k')
+    .ell(8, 10.5, 5.6, 3.6, 'F').ell(8, 9.8, 4.6, 2.6, 'f').px(6, 7, 'y').px(10, 7, 'y').px(6, 6, 'k').px(10, 6, 'k').line(6, 12, 3, 15, 'F').line(8, 13, 7, 15, 'F').line(10, 13, 9, 15, 'F').line(11, 12, 13, 15, 'F')
+    .px(7, 9, 'F').px(9, 9, 'F').px(6, 11, 'F').px(10, 11, 'F');
+  mk('crab', p.outline());
+}
+{
+  const p = painter(16, 16, 13);
+  p.ell(8, 5.5, 5.8, 4.6, 'M').ell(8, 5, 4.6, 3.4, 'm').ell(8, 4.5, 2.6, 1.6, 'q').px(5, 3, 'w').px(6, 3, 'w').px(6, 6, 'k').px(10, 6, 'k').px(6, 5, 'w').px(10, 5, 'w');
+  for (const [x, ln] of [[3, 9], [6, 10], [9, 8], [12, 9]]) for (let y = 9; y < 9 + ln - 3; y++) p.px(x + Math.round(Math.sin(y * 0.9 + x) * 0.9), y, y % 3 === 0 ? 'M' : 'm');
+  mk('jelly', p.outline());
+}
+{
+  const p = painter(16, 16, 14);
+  p.taper(1.5, 5, 11, 0.3, 2.4, 'D').taper(1.5, 5, 11, 0.3, 2.4, 'D').ell(8.5, 8, 6, 3.8, 'Q').ell(8.5, 9.5, 5, 2, 'q').ell(7.5, 6.8, 3, 1.2, 'C').rect(11, 7, 4, 1, 'k').rect(12, 8, 1, 1, 'w').rect(14, 8, 1, 1, 'w').rect(11, 9, 3, 1, 'r')
+    .px(11, 6, 'y').px(12, 6, 'k').px(7, 11, 'D').px(8, 12, 'D').px(6, 4, 'D').px(7, 3, 'D').px(8, 4, 'D').line(4, 8, 4, 9, 'D').line(6, 9, 6, 10, 'D');
+  p.px(10, 6, 'w'); p.px(9, 6, 'y'); mk('piranha', p.outline());
+}
+vari('drowned', 'orc', { E: 'D', e: 'C', N: 'V', n: 'T', r: 'y' });
+mk('kraken', (() => {
+  const p = painter(16, 16, 15);
+  p.ell(8, 5.5, 6.6, 5, 'U').ell(8, 5, 5.6, 4, 'u').ell(6, 3, 2.6, 1.3, 'v').rect(4, 5, 3, 2, 'y').rect(9, 5, 3, 2, 'y').rect(5, 5, 1, 2, 'k').rect(10, 5, 1, 2, 'k').px(8, 8, 'k')
+    .px(3, 2, 'U').px(13, 2, 'U').px(5, 8, 'P').px(11, 8, 'P');
+  for (const [x, dx] of [[1, -1], [4, -1], [7, 0], [9, 0], [12, 1], [14, 1]]) { for (let y = 10; y < 16; y++) p.px(x + dx * (y - 10) * 0.18 + Math.sin(y * 1.1 + x) * 0.8, y, (y & 1) ? 'U' : 'P'); p.px(x, 10, 'U'); p.px(x + 0, 11, 'U'); }
+  return p.outline();
+})());
+
+/* ---------- враги цеха ---------- */
+{
+  const p = painter(16, 16, 16);
+  p.rect(5, 0, 6, 5, 'I').rect(5, 0, 6, 1, 'j').rect(6, 2, 4, 2, 'k').px(6, 2, 'O').px(7, 2, 'O').px(8, 2, 'O').px(9, 2, 'O').rect(7, 5, 2, 1, 'J')
+    .rect(3, 6, 10, 6, 'I').rect(4, 6, 8, 1, 'j').rect(10, 6, 3, 6, 'J').ell(8, 9, 2, 2, 'K').px(8, 9, 'k').px(5, 8, 'J').px(5, 10, 'J')
+    .rect(0, 6, 3, 2, 'K').rect(0, 8, 2, 5, 'I').rect(13, 6, 3, 2, 'K').rect(14, 8, 2, 5, 'J').rect(0, 13, 2, 2, 'k').rect(14, 13, 2, 2, 'k')
+    .rect(4, 12, 3, 3, 'J').rect(9, 12, 3, 3, 'J').rect(3, 14, 4, 1, 'I').rect(9, 14, 4, 1, 'I').px(3, 7, 'w').px(12, 7, 'J').px(4, 11, 'J');
+  mk('automaton', p.outline());
+}
+{
+  const p = painter(16, 16, 17);
+  p.line(8, 0, 8, 3, 'J').px(8, 0, 'r').line(2, 3, 14, 3, 'g').line(3, 4, 13, 4, 'G').ell(8, 9, 6, 4.6, 'I').ell(8, 9.5, 5, 3.6, 'J').ell(8, 8, 5.4, 3.6, 'I').ell(8, 9, 3, 3, 'k').ell(8, 9, 2, 2, 'O').px(8, 9, 'H')
+    .rect(3, 12, 2, 2, 'K').rect(11, 12, 2, 2, 'K').px(4, 14, 'J').px(11, 14, 'J').px(4, 7, 'j').px(5, 6, 'j');
+  mk('drone', p.outline());
+}
+{
+  const p = painter(16, 16, 18);
+  p.rect(2, 12, 12, 3, 'J').rect(3, 11, 10, 1, 'I').rect(4, 7, 8, 5, 'I').rect(4, 7, 8, 1, 'j').rect(10, 8, 2, 4, 'J').ell(8, 5, 4.4, 3.4, 'I').ell(8, 5, 3.4, 2.6, 'k').ell(8, 5, 2.4, 1.8, 'J')
+    .ell(8, 5, 1, 0.9, 'O').rect(0, 8, 3, 1, 'K').rect(0, 8, 1, 5, 'K').rect(13, 8, 3, 1, 'K').rect(15, 8, 1, 5, 'K').px(5, 9, 'r').px(6, 9, 'y').px(7, 9, 'l').px(5, 13, 'I').px(10, 13, 'I')
+    .ell(2, 5.5, 1.4, 1.8, 'g').ell(14, 4.5, 1.2, 1.6, 'g').px(3, 3, 'g').px(13, 2, 'g');
+  mk('turret', p.outline());
+}
+vari('cogHound', 'rat', { G: 'I', d: 'J', m: 'K', r: 'O' });
+mk('colossus', (() => {
+  const p = painter(16, 16, 19);
+  p.rect(6, 0, 2, 4, 'J').rect(5, 0, 4, 1, 'I').px(4, 0, 'g').px(3, 1, 'g').rect(9, 3, 1, 1, 'g')
+    .rect(5, 3, 6, 4, 'K').rect(5, 3, 6, 1, 'y').rect(6, 4, 4, 2, 'k').px(6, 5, 'O').px(9, 5, 'O')
+    .rect(2, 7, 12, 6, 'K').rect(2, 7, 12, 1, 'y').rect(9, 8, 5, 5, 'L').ell(8, 10, 2.2, 2.2, 'J').ell(8, 10, 1.4, 1.4, 'O').px(8, 10, 'H').px(3, 9, 'J').px(3, 11, 'J').px(12, 9, 'J')
+    .rect(0, 6, 3, 8, 'I').rect(13, 6, 3, 8, 'J').rect(0, 14, 3, 2, 'K').rect(13, 14, 3, 2, 'K').rect(1, 5, 1, 1, 'y')
+    .rect(4, 13, 3, 3, 'L').rect(9, 13, 3, 3, 'L').rect(3, 15, 4, 1, 'J').rect(9, 15, 4, 1, 'J');
+  return p.outline();
+})());
+
+/* ---------- снаряды ---------- */
+SPR.orbThorn = def('orbThorn', recolor(ROWS.orb, { p: 'T' }));
+SPR.orbSand = def('orbSand', recolor(ROWS.orb, { p: 'a' }));
+SPR.orbWater = def('orbWater', recolor(ROWS.orb, { p: 'q' }));
+SPR.orbSpark = def('orbSpark', recolor(ROWS.fireball, { o: 'y', y: 'H', w: 'w' }));
+
+/* ---------- ДЕКОР ---------- */
+const DS = {};     // имя → функция, возвращающая рисовалку
+DS.crate = () => painter(16, 16, 21).rect(2, 4, 12, 11, '3').rect(5, 4, 1, 11, 'n').rect(10, 4, 1, 11, 'n').rect(2, 4, 12, 1, '4').rect(2, 14, 12, 1, '4').rect(2, 4, 1, 11, '4').rect(13, 4, 1, 11, '4').line(3, 5, 12, 13, '4').line(12, 5, 3, 13, '4').px(4, 6, 'y').outline();
+DS.crateStack = () => painter(16, 16, 22).rect(1, 7, 9, 8, '3').rect(1, 7, 9, 1, '4').rect(1, 14, 9, 1, '4').rect(1, 7, 1, 8, '4').rect(9, 7, 1, 8, '4').line(2, 8, 8, 13, '4')
+  .rect(8, 9, 7, 6, 'n').rect(8, 9, 7, 1, 'N').rect(8, 14, 7, 1, 'N').rect(8, 9, 1, 6, 'N').rect(14, 9, 1, 6, 'N').line(9, 10, 13, 13, 'N').rect(3, 2, 6, 5, '3').rect(3, 2, 6, 1, '4').rect(3, 6, 6, 1, '4').rect(3, 2, 1, 5, '4').rect(8, 2, 1, 5, '4').outline();
+DS.urn = () => painter(16, 16, 23).rect(5, 2, 6, 1, 't').rect(6, 3, 4, 2, 'N').ell(8, 9.5, 5, 5, 't').ell(7, 8.5, 2.8, 3.6, 'o').rect(4, 7, 8, 1, 'y').rect(4, 8, 8, 1, 'Y').rect(5, 14, 6, 1, 'N').shadeRight(10, 't', 'N').px(6, 11, 'N').outline();
+DS.skulls = () => { const p = painter(16, 16, 24), at = [[4, 12], [12, 12], [8, 8.5]]; for (const [cx, cy] of at) p.ell(cx, cy, 3, 2.7, 'W').rect(cx - 1, cy + 2, 3, 1, 'h'); for (const [cx, cy] of at) p.rect(cx - 2, cy - 0.5, 2, 2, 'k').rect(cx + 1, cy - 0.5, 2, 2, 'k'); return p.outline(); };
+DS.rubble = () => painter(16, 16, 25).ell(5, 12, 3.8, 2.6, 'G').ell(11.5, 12.5, 3.2, 2.2, 'G').ell(8, 10.5, 3.2, 2.6, 'g').ell(8, 13.5, 3, 1.4, 'G').px(7, 9, 'w').px(4, 11, 'g').px(11, 11, 'g').px(6, 12, 'd').px(10, 13, 'd').px(5, 13, 'd').outline();
+DS.candles = () => { const p = painter(16, 16, 26).rect(3, 14, 10, 1, 'Y').rect(4, 13, 8, 1, 'y'); for (const [x, h] of [[5, 5], [8, 8], [11, 4]]) { p.rect(x - 1, 14 - h, 2, h, 'W').px(x - 1, 14 - h, 'w').px(x, 13 - h, 'y').px(x, 12 - h, 'o').px(x, 11 - h, 'y'); } return p.outline(); };
+DS.banner = () => { const p = painter(16, 16, 27).rect(1, 0, 14, 1, 'Y'); for (let x = 2; x <= 13; x++) { const b = 11 + Math.abs(x - 7.5) * 0.5; for (let y = 1; y <= b; y++) p.px(x, y, (x === 2 || x === 13) ? 'y' : (x % 4 < 2 ? 'r' : 'R')); } p.px(7, 5, 'y').px(8, 5, 'y').rect(6, 6, 4, 2, 'y').px(7, 8, 'y').px(8, 8, 'y').px(7, 4, 'y').px(8, 4, 'y'); return p.outline(); };
+DS.chains = () => { const p = painter(16, 16, 28); for (const [x, ln] of [[4, 9], [9, 12], [13, 6]]) { for (let y = 0; y < ln; y++) p.px(x + ((y >> 1) & 1), y, y % 2 ? 'G' : 'g'); p.rect(x - 1, ln, 3, 2, 'G').px(x, ln + 2, 'g'); } return p.outline(); };
+DS.cobweb = () => { const p = painter(16, 16, 29); for (const [tx, ty] of [[0, 8], [2, 13], [8, 15], [13, 13], [15, 8]]) p.line(8, 0, tx, ty, 'g'); for (const r of [4, 7.5, 11]) for (let a = 12; a <= 168; a += 7) p.px(8 + Math.cos(a * Math.PI / 180) * r * 1.1, Math.sin(a * Math.PI / 180) * r, 'w'); return p; };
+DS.stalagmite = () => painter(16, 16, 30).taper(5, 3, 15, 0.4, 3.8, 'G').taper(11, 7, 15, 0.4, 3, 'G').taper(8, 9, 15, 0.3, 2, 'G').shadeRight(7, 'G', 'd').shadeLeft(4, 'G', 'g').px(11, 10, 'g').outline();
+DS.stalactite = () => painter(16, 16, 31).taper(5, 0, 11, 3.6, 0.4, 'G').taper(11, 0, 7, 2.8, 0.4, 'G').taper(8.5, 0, 5, 1.8, 0.3, 'G').shadeRight(8, 'G', 'd').shadeLeft(4, 'G', 'g').outline();
+const crystalP = (cols, tall, seed) => {
+  const H = tall ? 24 : 16, p = painter(16, H, seed);
+  for (const [cx, tip, hw] of [[5, H * 0.3, 2.6], [10.5, H * 0.1, 3.2], [8, H * 0.5, 2]]) { p.taper(cx, Math.round(tip), H - 1, 0.3, hw, cols[1]); p.line(cx, Math.round(tip) + 2, cx, H - 3, cols[0]); }
+  p.shadeRight(10, cols[1], cols[2]); return p.outline();
+};
+DS.crystalTeal = () => crystalP(['H', 'z', '2'], false, 32); DS.crystalPurple = () => crystalP(['u', 'v', 'U'], false, 33); DS.crystalIce = () => crystalP(['w', 'i', 'c'], true, 34);
+DS.crystalRed = () => crystalP(['y', 'o', 'r'], false, 35);
+DS.shroomGlow = () => { const p = painter(16, 16, 36); for (const [cx, cy, r, st] of [[4.5, 10, 3, 4], [10.5, 8, 3.8, 6], [8, 12.5, 2.4, 2]]) { p.rect(cx - 0.5, cy, 1.5, st + 1, 'w'); p.ell(cx, cy, r, r * 0.65, 'z').px(cx - 1, cy - 1, 'H').px(cx + 1, cy, 'H'); } return p.outline(); };
+DS.shroomRed = () => { const p = painter(16, 16, 37); for (const [cx, cy, r, st] of [[4.5, 10, 3, 4], [10.5, 8, 3.8, 6], [8, 12.5, 2.4, 2]]) { p.rect(cx - 0.5, cy, 1.5, st + 1, 'W'); p.ell(cx, cy, r, r * 0.65, 'r').px(cx - 1, cy - 1, 'w').px(cx + 1, cy, 'w'); } return p.outline(); };
+DS.fern = () => { const p = painter(16, 16, 38); for (const a of [-62, -32, 0, 32, 62]) { const len = 10 + (a === 0 ? 2 : 0); for (let t = 0; t <= len; t++) { const x = 8 + Math.sin(a * Math.PI / 180) * t * 0.85, y = 15 - Math.cos(a * Math.PI / 180) * t * 0.95 - Math.sin(t * 0.2) * 0.3; p.px(x, y, 'E'); if (t > 2 && t % 2 === 0) { p.px(x - 1, y, 'e').px(x + 1, y, t % 4 ? 'l' : 'e'); } } } return p; };
+DS.flowers = () => { const p = painter(16, 16, 39); for (const [x, h, c] of [[4, 6, 'm'], [8, 9, 'y'], [12, 5, 'v']]) { p.line(x, 15, x, 15 - h, 'e'); p.ell(x, 14 - h, 1.6, 1.6, c).px(x, 14 - h, 'y'); p.px(x - 1, 12, 'l').px(x + 1, 11, 'l'); } return p.speck(0, 13, 16, 3, 'e', 0.4); };
+DS.bush = () => painter(16, 16, 40).ell(8, 11.5, 7, 3.8, 'E').ell(5.5, 9.5, 4, 3.4, 'e').ell(11, 9, 3.8, 3, 'e').ell(8, 8, 3.4, 2.6, 'l').speck(2, 5, 12, 9, 'l', 0.12, 'e').px(5, 11, 'r').px(10, 12, 'r').px(8, 10, 'r').px(12, 11, 'r').outline();
+DS.tree = () => { const p = painter(16, 24, 41); p.taper(7.5, 12, 23, 1.6, 3.6, 'N').rect(5, 14, 2, 9, 'n').px(4, 23, 'N').px(11, 23, 'N').ell(8, 7, 7.2, 6.4, 'E').ell(5.5, 6, 4.6, 4, 'e').ell(10.5, 5.5, 4, 3.4, 'e').ell(7, 3.5, 3.2, 2.6, 'l').ell(11.5, 8.5, 3, 2.2, 'e').speck(1, 1, 14, 13, 'l', 0.1, 'e').speck(1, 1, 14, 13, 'V', 0.1, 'E'); return p.outline(); };
+DS.log = () => painter(16, 16, 42).rect(2, 9, 11, 5, 'n').rect(2, 9, 11, 1, '3').rect(2, 13, 11, 1, 'N').ell(13, 11.5, 2, 2.8, '3').ell(13, 11.5, 1, 1.5, 'n').px(13, 11, 'N').speck(2, 8, 11, 2, 'e', 0.6).px(5, 7, 'r').px(6, 7, 'r').px(5, 8, 'W').px(9, 8, 'e').outline();
+DS.cactus = () => { const p = painter(16, 24, 43); p.taper(7.5, 3, 23, 2.4, 2.6, 'e').rect(5, 3, 1, 20, 'l').shadeRight(9, 'e', 'E'); p.rect(2, 11, 5, 2, 'e').rect(2, 7, 2, 6, 'e').rect(3, 7, 1, 5, 'l').rect(10, 8, 4, 2, 'e').rect(12, 5, 2, 5, 'e').rect(12, 5, 1, 4, 'E'); p.px(7, 2, 'm').px(8, 2, 'm').px(7, 1, 'y').speck(3, 3, 10, 20, 'w', 0.05, 'e'); return p.outline(); };
+const columnP = (c, seed, broken = true) => { const p = painter(16, 24, seed); p.rect(3, 21, 10, 3, c[1]).rect(4, 20, 8, 1, c[0]).rect(5, 7, 6, 13, c[0]).rect(5, 7, 1, 13, c[3]).rect(8, 7, 1, 13, c[1]).rect(10, 7, 1, 13, c[1]).rect(4, 6, 8, 1, c[3]); if (broken) { p.rect(4, 5, 8, 2, '.'); p.rect(5, 6, 6, 1, '.'); p.px(5, 6, c[1]).px(8, 7, '.').px(9, 6, '.'); p.rect(12, 18, 3, 3, c[0]).rect(12, 18, 3, 1, c[3]); p.px(2, 22, c[2]).px(1, 23, c[2]); } else p.rect(3, 4, 10, 2, c[0]).rect(3, 4, 10, 1, c[3]); return p.outline(); };
+DS.columnTeal = () => columnP(['q', 'Q', 'D', 'w'], 43);
+DS.columnSand = () => columnP(['a', 'A', '3', 'x'], 44); DS.columnGray = () => columnP(['G', 'd', 'd', 'g'], 45); DS.columnPurple = () => columnP(['U', 'P', 'Z', 'u'], 46, false);
+const statueP = (body, hi, acc, ears, seed) => {
+  const p = painter(16, 24, seed);
+  p.rect(3, 21, 10, 3, body).rect(4, 20, 8, 1, hi).rect(6, 14, 4, 6, body).rect(5, 7, 6, 8, body).rect(5, 7, 6, 1, hi).rect(3, 8, 2, 8, body).rect(11, 8, 2, 8, body).rect(6, 8, 4, 2, acc).ell(8, 4.5, 2.6, 3, hi).px(7, 4, 'k').px(9, 4, 'k').rect(7, 7, 2, 1, acc);
+  if (ears) { p.taper(6, 0, 3, 0.2, 1, body).taper(10, 0, 3, 0.2, 1, body); p.rect(7, 5, 2, 2, body); }
+  else { p.rect(6, 1, 4, 1, acc).px(8, 0, acc).px(8, 2, acc); }
+  p.shadeRight(9, hi, body); return p.outline();
+};
+DS.statueStone = () => statueP('G', 'g', 'd', false, 47); DS.statueAnubis = () => statueP('J', 'I', 'y', true, 48); DS.statueGold = () => statueP('Y', 'y', 'C', false, 49);
+DS.coralBranch = () => { const p = painter(16, 16, 50); for (const [x0, x1, y1] of [[8, 4, 2], [8, 8, 0], [8, 12, 3], [6, 2, 6], [10, 14, 7]]) { p.line(x0, 15, x1, y1 + 2, 'F').line(x0 + 1, 15, x1 + 1, y1 + 2, 'F'); p.ell(x1, y1 + 1, 1.2, 1.2, 'M'); } return p.speck(2, 2, 12, 13, 'f', 0.2, 'F').outline(); };
+DS.coralTube = () => { const p = painter(16, 16, 51); for (const [x, h, c] of [[3, 8, 'Q'], [6, 12, 'C'], [9, 10, 'Q'], [12, 7, 'C']]) { p.rect(x, 15 - h, 3, h, c).rect(x, 15 - h, 3, 1, 'D').px(x + 1, 15 - h, 'k').rect(x, 15 - h, 1, h, 'q'); } return p.outline(); };
+DS.coralBrain = () => painter(16, 16, 52).ell(8, 12, 6.4, 3.8, 'm').ell(8, 11, 5.4, 2.8, 'M').speck(2, 8, 12, 7, 'F', 0.3, 'M').speck(2, 8, 12, 7, 'f', 0.2, 'm').outline();
+DS.seaweed = () => { const p = painter(16, 16, 53); for (const [x0, ln] of [[4, 13], [8, 15], [11, 11]]) for (let y = 0; y < ln; y++) { const x = x0 + Math.sin(y * 0.55 + x0) * 1.6; p.px(x, 15 - y, y % 3 === 0 ? 'l' : 'e'); p.px(x + 1, 15 - y, 'E'); } return p; };
+DS.shells = () => { const p = painter(16, 16, 54); p.ell(5, 12, 3.4, 2.6, 'M').ell(5, 12, 2, 1.8, 'f').line(5, 10, 5, 14, 'F').line(3, 11, 3, 14, 'F').line(7, 11, 7, 14, 'F'); p.ell(11.5, 13, 2.6, 2, 'w').line(11, 11, 11, 15, 'g').line(13, 12, 13, 15, 'g'); p.px(9, 10, 'o').px(8, 11, 'o').px(10, 11, 'o').px(9, 12, 'o').px(7, 10, 'o').px(11, 10, 'o'); return p.outline(); };
+DS.anchor = () => { const p = painter(16, 24, 55); p.ell(8, 3, 2.4, 2.4, 'I').ell(8, 3, 1.1, 1.1, '.').rect(7, 5, 2, 15, 'I').rect(4, 8, 8, 2, 'I').rect(7, 5, 1, 15, 'j'); for (let t = 0; t <= 8; t++) { const a = t / 8 * Math.PI * 0.95, x = 8 - Math.sin(a) * 6, y = 20 - Math.cos(a) * 3.6 - t * 0.2; p.rect(x, y, 2, 2, 'I'); p.rect(16 - x - 2, y, 2, 2, 'I'); } p.rect(1, 14, 3, 2, 'I').rect(12, 14, 3, 2, 'I').speck(1, 1, 14, 22, 'L', 0.1, 'I').speck(5, 18, 6, 5, 'e', 0.3).shadeRight(9, 'I', 'J'); return p.outline(); };
+DS.pipeSteam = () => painter(16, 16, 56).rect(6, 0, 4, 10, 'I').rect(6, 0, 1, 10, 'j').rect(9, 0, 1, 10, 'J').rect(5, 3, 6, 2, 'K').rect(5, 6, 6, 1, 'K').rect(5, 10, 6, 3, 'J').rect(7, 13, 2, 1, 'k').ell(8, 14.5, 2.6, 1.3, 'g').ell(11, 15, 1.6, 1, 'w').px(4, 13, 'g').outline();
+DS.cables = () => { const p = painter(16, 16, 57); for (const [x, ln] of [[3, 10], [7, 13], [11, 8], [14, 11]]) { for (let y = 0; y < ln; y++) p.px(x + Math.sin(y * 0.5 + x) * 1.2, y, y % 4 === 3 ? 'K' : 'J'); p.px(x + Math.sin(ln * 0.5 + x) * 1.2, ln, 'y'); } return p.outline(); };
+DS.gear = () => { const p = painter(16, 16, 58); p.ell(8, 8, 5.2, 5.2, 'K'); for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; p.rect(8 + Math.cos(a) * 6 - 0.5, 8 + Math.sin(a) * 6 - 0.5, 2, 2, 'K'); } p.ell(8, 8, 3.4, 3.4, 'L').ell(8, 8, 1.5, 1.5, 'k').px(5, 5, 'y').px(6, 4, 'y').px(10, 6, 'Y'); return p.outline(); };
+DS.machine = () => painter(16, 20, 59).rect(2, 3, 12, 15, 'I').rect(2, 3, 12, 1, 'j').rect(10, 3, 4, 15, 'J').rect(4, 5, 8, 5, 'k').ell(6.5, 7.5, 1.6, 1.6, 'w').px(6, 7, 'k').px(7, 8, 'r').rect(9, 6, 2, 1, 'l').rect(9, 8, 2, 1, 'y').px(5, 12, 'r').px(7, 12, 'y').px(9, 12, 'l').rect(4, 14, 8, 1, 'J').rect(4, 16, 8, 1, 'J').rect(0, 6, 2, 10, 'K').rect(0, 6, 2, 1, 'y').rect(2, 18, 3, 2, 'J').rect(11, 18, 3, 2, 'J').outline();
+DS.lampPost = () => { const p = painter(16, 24, 60); p.rect(7, 7, 2, 16, 'J').rect(7, 7, 1, 16, 'I').rect(5, 22, 6, 2, 'I').ell(8, 4, 3.4, 3.4, 'x').ell(8, 4, 2, 2, 'H').px(8, 4, 'w').px(3, 4, 'y').px(13, 4, 'y').px(8, 0, 'y').rect(6, 7, 4, 1, 'K'); return p.outline(); };
+DS.brazier = () => { const p = painter(16, 20, 61); p.line(4, 19, 6, 12, 'J').line(12, 19, 10, 12, 'J').line(8, 19, 8, 12, 'J').rect(3, 10, 10, 2, 'K').rect(4, 12, 8, 1, 'L').rect(3, 10, 10, 1, 'y').taper(8, 1, 9, 0.3, 3.6, 'o').taper(8, 4, 9, 0.2, 2.2, 'y').px(5, 6, 'r').px(11, 7, 'r').px(7, 2, 'r'); return p.outline(); };
+DS.candelabra = () => { const p = painter(16, 24, 62); p.rect(7, 8, 2, 14, 'Y').rect(5, 21, 6, 2, 'y').rect(3, 8, 10, 1, 'y').rect(3, 6, 1, 3, 'y').rect(12, 6, 1, 3, 'y').rect(7, 6, 2, 3, 'y'); for (const x of [3.5, 7.5, 11.5]) { p.rect(x - 0.5, 3, 1.4, 3, 'W').px(x, 2, 'y').px(x, 1, 'o').px(x, 0, 'y'); } return p.outline(); };
+DS.obelisk = () => { const p = painter(16, 24, 63); p.rect(3, 21, 10, 3, 'Z').taper(7.5, 3, 21, 2.4, 4.6, 'P').taper(7.5, 1, 3, 0.3, 2, 'p').shadeRight(8, 'P', 'Z'); for (const y of [8, 12, 16]) { p.rect(6, y, 1, 2, 'v').rect(9, y, 1, 2, 'v').px(8, y + 1, 'v'); } p.px(7, 4, 'u').px(7, 6, 'U'); return p.outline(); };
+DS.tomb = () => painter(16, 16, 64).rect(3, 6, 10, 9, 'G').ell(8, 6, 5, 3.4, 'G').rect(3, 6, 2, 9, 'g').rect(7, 4, 2, 7, 'd').rect(5, 6, 6, 2, 'd').rect(5, 12, 6, 1, 'd').shadeRight(10, 'G', 'd').speck(3, 3, 10, 12, 'e', 0.15, 'G').outline();
+DS.coffin = () => { const p = painter(16, 24, 65); for (let y = 1; y < 23; y++) { const hw = y < 6 ? 2.4 + (y - 1) * 0.5 : 4.9 - (y - 6) * 0.16; p.taper(7.5, y, y, hw, hw, 'N'); p.taper(7.5, y, y, hw - 1.4, hw - 1.4, 'n'); } p.rect(7, 4, 2, 7, 'y').rect(5, 6, 6, 2, 'y').px(8, 14, 'Y').px(8, 17, 'Y'); return p.outline(); };
+DS.snow = () => painter(16, 16, 66).ell(8, 12.5, 7, 3.4, 'w').ell(8, 11.5, 5.4, 2.4, 'j').ell(5, 11, 2, 1, 'w').px(10, 10, 'i').px(7, 12, 'i').px(12, 12, 'i').outline();
+DS.emberPile = () => { const p = painter(16, 16, 67).ell(8, 13, 6.4, 2.6, 'k').speck(2, 11, 12, 4, 'o', 0.35, 'k').speck(2, 11, 12, 4, 'y', 0.15, 'k').speck(2, 11, 12, 4, 'r', 0.25, 'k'); p.taper(6, 6, 12, 0.2, 1.6, 'o').taper(10, 8, 12, 0.2, 1.2, 'o').px(6, 9, 'y').px(10, 10, 'y'); return p; };
+DS.lavaRock = () => painter(16, 16, 68).ell(8, 11, 6, 4, 'd').ell(7, 9.5, 3.4, 2.4, 'G').line(4, 9, 7, 12, 'o').line(7, 12, 10, 10, 'o').line(10, 10, 12, 13, 'y').px(5, 13, 'o').px(11, 8, 'r').shadeRight(10, 'd', 'k').outline();
+DS.roots = () => { const p = painter(16, 16, 69); for (const [x, ln] of [[2, 10], [6, 14], [9, 8], [13, 12]]) { for (let y = 0; y < ln; y++) p.px(x + Math.sin(y * 0.45 + x) * 1.2, y, y % 5 === 0 ? 'n' : 'N'); } p.speck(0, 0, 16, 14, 'n', 0.1, 'N'); return p.outline(); };
+DS.vines = () => { const p = painter(16, 16, 70); for (const [x, ln] of [[2, 12], [5, 9], [9, 14], [12, 8]]) { for (let y = 0; y < ln; y++) { const xx = x + Math.sin(y * 0.5 + x) * 1.1; p.px(xx, y, 'e'); if (y % 3 === 2) p.px(xx + (y % 6 === 2 ? -1 : 1), y, 'l'); } } p.px(4, 11, 'm').px(9, 13, 'y').px(12, 7, 'm').px(2, 11, 'y'); return p; };
+DS.lanternHang = () => { const p = painter(16, 16, 71); p.line(8, 0, 8, 5, 'G').rect(5, 5, 6, 1, 'Y').rect(5, 6, 6, 7, 'Y').rect(6, 7, 4, 5, 'y').rect(7, 8, 2, 3, 'H').rect(5, 13, 6, 1, 'Y').px(8, 14, 'Y'); return p.outline(); };
+DS.jellyLamp = () => { const p = painter(16, 16, 72); p.line(8, 0, 8, 3, 'g').ell(8, 7, 4.4, 3.6, 'q').ell(8, 6.4, 3, 2.2, 'w').px(6, 5, 'H'); for (const x of [5, 7, 9, 11]) for (let y = 9; y < 14; y++) p.px(x + Math.sin(y + x) * 0.7, y, 'c'); return p.outline(); };
+DS.sandRocks = () => painter(16, 16, 73).ell(5, 12, 4, 2.8, 'A').ell(5, 11, 3, 1.8, 'a').ell(11.5, 12.5, 3.2, 2.2, 'A').ell(11.5, 12, 2.4, 1.4, 'a').px(8, 14, 'a').px(9, 14, 'a').outline();
+DS.dune = () => painter(16, 16, 74).ell(8, 13, 7.4, 3, 'a').ell(7, 12.5, 5, 1.8, 'x').line(2, 13, 14, 13, 'A').px(4, 11, 'A').px(10, 12, 'A').outline();
+DS.oilDrum = () => painter(16, 16, 75).rect(4, 3, 8, 12, 'o').rect(4, 3, 2, 12, 'y').rect(10, 3, 2, 12, 't').rect(4, 5, 8, 1, 'J').rect(4, 12, 8, 1, 'J').rect(4, 8, 8, 1, 'L').px(7, 10, 'k').outline();
+DS.torchStand = () => { const p = painter(16, 20, 76); p.rect(7, 8, 2, 11, 'N').rect(5, 18, 6, 2, 'N').rect(5, 7, 6, 2, 'Y').taper(8, 0, 7, 0.2, 2.6, 'o').taper(8, 2, 7, 0.1, 1.4, 'y'); return p.outline(); };
+
+for (const k in DS) mk(k, DS[k]());
+/* перекраски: одна форма, разные миры */
+mkv('bannerPurple', 'banner', { r: 'p', R: 'P', y: 'v' });
+mkv('bannerGold', 'banner', { r: 'y', R: 'Y', y: 'C' });
+mkv('bannerTeal', 'banner', { r: 'Q', R: 'D', y: 'w' });
+mkv('chainsRust', 'chains', { G: 'L', g: 'K' });
+mkv('webSea', 'cobweb', { g: 'q', w: 'w' });
+mkv('obsidian', 'stalagmite', { G: 'k', g: 'P', d: 'd' });
+mkv('iceSpikes', 'stalagmite', { G: 'c', g: 'w', d: 'Q' });
+mkv('iciclesHang', 'stalactite', { G: 'c', g: 'w', d: 'Q' });
+mkv('hotStalactite', 'stalactite', { G: 'N', g: 'o', d: 'k' });
+mkv('brazierPurple', 'brazier', { o: 'p', y: 'v', r: 'U' });
+mkv('brazierIce', 'brazier', { o: 'c', y: 'w', r: 'Q' });
+mkv('brazierSand', 'brazier', { K: 'Y', L: 'N' });
+mkv('urnTeal', 'urn', { t: 'C', N: 'D', o: 'q', y: 'y' });
+mkv('urnGold', 'urn', { t: 'y', N: 'Y', o: 'H', y: 'C', Y: 'C' });
+mkv('crateWet', 'crate', { '3': 'T', n: 'D', '4': 'V' });
+mkv('crateIron', 'crate', { '3': 'I', n: 'J', '4': 'J', y: 'O' });
+mkv('rubbleSand', 'rubble', { G: 'A', g: 'a', d: '3', w: 'x' });
+mkv('rubbleBrown', 'rubble', { G: 'N', g: 'n', d: '4', w: '3' });
+mkv('skullsSand', 'skulls', { W: 'a', h: 'A' });
+mkv('shroomPale', 'shroomGlow', { z: 'c', H: 'w' });
+mkv('shroomBlue', 'shroomGlow', { z: 'b', H: 'c' });
+mkv('fernSea', 'fern', { e: 'C', l: 'q', E: 'D' });
+mkv('flowersTeal', 'flowers', { m: 'M', v: 'u' });
+mkv('bonesSea', 'bones', { W: 'j' });
+mkv('crystalBlueCave', 'crystalTeal', { z: 'b', '2': 'B', H: 'c' });
+
 /* ============ ДАННЫЕ ИГРЫ: враги, боссы, уровни, заклинания, предметы ============ */
 const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const pick = (arr, R) => arr[Math.floor((R ? R() : Math.random()) * arr.length)];
@@ -858,7 +1520,8 @@ SPR.boltIcon = def('boltIcon', [
 /* снаряды врагов */
 const SHOT = {
   orb: { spr: 'orb' }, fire: { spr: 'orbFire' }, ice: { spr: 'orbIce', fx: 'slow' },
-  spore: { spr: 'orbSpore', fx: 'poison' }, web: { spr: 'orbWeb', fx: 'slow' }
+  spore: { spr: 'orbSpore', fx: 'poison' }, web: { spr: 'orbWeb', fx: 'slow' },
+  thorn: { spr: 'orbThorn' }, sand: { spr: 'orbSand', fx: 'slow' }, water: { spr: 'orbWater', fx: 'slow' }, spark: { spr: 'orbSpark' }
 };
 /* res: множители урона заклинаний по стихиям; armor: плоское снижение урона оружия */
 const ENEMY = {
@@ -878,35 +1541,71 @@ const ENEMY = {
   wraith:   { name: 'Ледяной призрак',  hp: 20, dmg: [5, 6],  speed: 1.0, r: 0.28, xp: 18, gold: [5, 12], sc: 0.8,  z: 0.12, range: 7,   cd: 2.1, sight: 9, ranged: true, shot: 'ice', res: { frost: 0.2, fire: 1.5 } },
   darkKnight: { name: 'Рыцарь смерти',  hp: 55, dmg: [9, 12], speed: 1.1, r: 0.3,  xp: 36, gold: [10, 24], sc: 1.0, z: 0,    range: 1.0, cd: 1.2, sight: 9, armor: 2 },
   shade:    { name: 'Тень',             hp: 30, dmg: [7, 9],  speed: 1.2, r: 0.28, xp: 28, gold: [8, 18], sc: 0.85, z: 0.12, range: 8,   cd: 1.6, sight: 10, ranged: true, shot: 'orb', res: { fire: 1.2 } },
+  /* ---- чаща ---- */
+  wolf:     { name: 'Лесной волк',      hp: 24, dmg: [5, 7],  speed: 2.2, r: 0.28, xp: 14, gold: [4, 10], sc: 0.7,  z: 0,    range: 0.9, cd: 0.9, sight: 9, res: { fire: 1.2 } },
+  hornet:   { name: 'Шершень',          hp: 12, dmg: [3, 4],  speed: 2.5, r: 0.2,  xp: 11, gold: [2, 7],  sc: 0.42, z: 0.28, range: 0.8, cd: 0.8, sight: 9, poison: 3, res: { fire: 1.4 } },
+  wisp:     { name: 'Блуждающий огонёк', hp: 16, dmg: [5, 6], speed: 1.3, r: 0.24, xp: 16, gold: [4, 10], sc: 0.55, z: 0.3,  range: 7,   cd: 1.9, sight: 9, ranged: true, shot: 'spore', res: { fire: 0.3, frost: 1.3 } },
+  treant:   { name: 'Древень',          hp: 70, dmg: [9, 12], speed: 0.8, r: 0.36, xp: 32, gold: [10, 20], sc: 1.1, z: 0,    range: 1.15, cd: 1.7, sight: 8, armor: 2, res: { fire: 1.7, bolt: 0.8, frost: 0.8 } },
+  /* ---- гробницы ---- */
+  scarab:   { name: 'Скарабей',         hp: 14, dmg: [4, 5],  speed: 2.1, r: 0.22, xp: 12, gold: [3, 8],  sc: 0.46, z: 0,    range: 0.8, cd: 0.8, sight: 8, armor: 1 },
+  scorpion: { name: 'Скорпион',         hp: 32, dmg: [7, 9],  speed: 1.5, r: 0.28, xp: 20, gold: [5, 12], sc: 0.72, z: 0,    range: 0.95, cd: 1.1, sight: 8, poison: 4, armor: 1, res: { fire: 1.2 } },
+  mummy:    { name: 'Мумия',            hp: 58, dmg: [9, 12], speed: 0.85, r: 0.3, xp: 30, gold: [8, 18], sc: 1.0,  z: 0,    range: 1.0, cd: 1.5, sight: 8, res: { fire: 1.8, frost: 0.9 } },
+  djinn:    { name: 'Песчаный джинн',   hp: 34, dmg: [7, 9],  speed: 1.1, r: 0.3,  xp: 28, gold: [8, 18], sc: 0.9,  z: 0.25, range: 7,   cd: 1.8, sight: 10, ranged: true, shot: 'sand', res: { fire: 0.6, frost: 1.2 } },
+  /* ---- затонувший храм ---- */
+  crab:     { name: 'Краб-великан',     hp: 72, dmg: [11, 14], speed: 0.9, r: 0.34, xp: 34, gold: [10, 22], sc: 0.9, z: 0,    range: 1.0, cd: 1.5, sight: 8, armor: 3, res: { bolt: 0.7, fire: 1.2 } },
+  jelly:    { name: 'Медуза',           hp: 34, dmg: [7, 9],  speed: 0.8, r: 0.28, xp: 26, gold: [6, 14], sc: 0.8,  z: 0.32, range: 7,   cd: 1.9, sight: 9, ranged: true, shot: 'water', res: { bolt: 1.5, frost: 0.9 } },
+  piranha:  { name: 'Пиранья',          hp: 26, dmg: [9, 11], speed: 2.6, r: 0.24, xp: 22, gold: [5, 12], sc: 0.55, z: 0.12, range: 0.85, cd: 0.75, sight: 9, res: { bolt: 1.4 } },
+  drowned:  { name: 'Утопленник',       hp: 62, dmg: [10, 13], speed: 0.85, r: 0.3, xp: 32, gold: [8, 18], sc: 1.0,  z: 0,    range: 1.0, cd: 1.5, sight: 8, slowHit: 2, res: { fire: 0.9, bolt: 1.3 } },
+  /* ---- заводской цех ---- */
+  automaton: { name: 'Автоматон',       hp: 84, dmg: [13, 17], speed: 0.95, r: 0.32, xp: 42, gold: [12, 26], sc: 1.0, z: 0,   range: 1.05, cd: 1.5, sight: 8, armor: 3, res: { fire: 0.8, bolt: 1.4, frost: 1.1 } },
+  drone:    { name: 'Дрон-наблюдатель', hp: 38, dmg: [9, 11], speed: 1.4, r: 0.26, xp: 30, gold: [8, 18], sc: 0.6,  z: 0.3,  range: 7.5, cd: 1.5, sight: 10, ranged: true, shot: 'spark', res: { bolt: 1.5 } },
+  turret:   { name: 'Паровая турель',   hp: 56, dmg: [10, 13], speed: 0,  r: 0.3,  xp: 30, gold: [8, 18], sc: 0.75, z: 0,    range: 8,   cd: 1.5, sight: 9, ranged: true, shot: 'spark', armor: 2, res: { bolt: 1.5 } },
+  cogHound: { name: 'Механический пёс', hp: 46, dmg: [11, 14], speed: 2.3, r: 0.28, xp: 28, gold: [8, 18], sc: 0.7,  z: 0,    range: 0.9, cd: 0.9, sight: 9, armor: 1, res: { bolt: 1.4 } },
   /* ---- боссы ---- */
-  boneKing: { name: 'Костяной Король', hp: 240, dmg: [9, 12], speed: 1.0, r: 0.4, xp: 150, gold: [40, 60], sc: 1.3, z: 0, range: 1.25, cd: 1.3, sight: 22, boss: true, abCd: 3.2, res: { bolt: 0.8 },
+  boneKing: { name: 'Костяной Король', hp: 210, dmg: [8, 11], speed: 1.0, r: 0.4, xp: 150, gold: [40, 60], sc: 1.3, z: 0, range: 1.25, cd: 1.3, sight: 22, boss: true, abCd: 3.2, res: { bolt: 0.8 },
     abil: [{ t: 'charge' }, { t: 'summon', type: 'skeleton', n: 2 }, { t: 'slam', r: 2.3, dmg: [10, 14] }] },
-  spiderQueen: { name: 'Королева пауков', hp: 300, dmg: [8, 11], speed: 1.3, r: 0.42, xp: 260, gold: [60, 90], sc: 1.45, z: 0, range: 1.3, cd: 1.2, sight: 22, boss: true, abCd: 3.0, poison: 5, res: { fire: 1.3 },
-    abil: [{ t: 'spread', n: 3, shot: 'web', dmg: [5, 7], spd: 4, arc: 0.3 }, { t: 'summon', type: 'spider', n: 3 }, { t: 'charge' }] },
-  demon: { name: 'Огненный Демон', hp: 400, dmg: [12, 16], speed: 1.0, r: 0.42, xp: 420, gold: [80, 120], sc: 1.4, z: 0, range: 1.3, cd: 1.4, sight: 22, boss: true, abCd: 2.8, res: { fire: 0.1, frost: 1.5 },
-    abil: [{ t: 'spread', n: 5, shot: 'fire', dmg: [7, 10], spd: 4, arc: 0.22 }, { t: 'ring', n: 10, shot: 'fire', dmg: [6, 8], spd: 3.2 }, { t: 'charge' }, { t: 'slam', r: 2.6, dmg: [12, 16] }] },
-  iceGiant: { name: 'Ледяной Великан', hp: 620, dmg: [16, 21], speed: 0.9, r: 0.46, xp: 620, gold: [100, 150], sc: 1.5, z: 0, range: 1.4, cd: 1.7, sight: 22, boss: true, abCd: 3.0, slowHit: 3, res: { frost: 0.1, fire: 1.5 },
-    abil: [{ t: 'slam', r: 3.0, dmg: [16, 21] }, { t: 'ring', n: 12, shot: 'ice', dmg: [9, 12], spd: 3 }, { t: 'spread', n: 3, shot: 'ice', dmg: [10, 13], spd: 4.5, arc: 0.2 }] },
-  lich: { name: 'Король-Лич', hp: 1100, dmg: [18, 24], speed: 0.8, r: 0.4, xp: 1000, gold: [0, 0], sc: 1.25, z: 0, range: 1.3, cd: 1.5, sight: 22, boss: true, abCd: 2.6,
-    abil: [{ t: 'spread', n: 3, shot: 'orb', dmg: [12, 16], spd: 4, arc: 0.22 }, { t: 'summon', type: 'shade', n: 2 }, { t: 'blink' }, { t: 'ring', n: 14, shot: 'orb', dmg: [10, 13], spd: 3.2 }, { t: 'slam', r: 2.6, dmg: [16, 22] }] }
+  treeAncient: { name: 'Древний Страж', hp: 430, dmg: [11, 15], speed: 0.9, r: 0.46, xp: 230, gold: [50, 80], sc: 1.6, z: 0, range: 1.4, cd: 1.6, sight: 22, boss: true, abCd: 3.0, armor: 1, res: { fire: 1.6, bolt: 0.8 },
+    abil: [{ t: 'slam', r: 2.8, dmg: [12, 17] }, { t: 'summon', type: 'wolf', n: 2 }, { t: 'spread', n: 5, shot: 'thorn', dmg: [7, 10], spd: 4.2, arc: 0.24 }, { t: 'ring', n: 10, shot: 'spore', dmg: [5, 7], spd: 3 }, { t: 'charge' }] },
+  spiderQueen: { name: 'Королева пауков', hp: 520, dmg: [11, 14], speed: 1.3, r: 0.42, xp: 360, gold: [60, 90], sc: 1.45, z: 0, range: 1.3, cd: 1.2, sight: 22, boss: true, abCd: 3.0, poison: 5, res: { fire: 1.3 },
+    abil: [{ t: 'spread', n: 3, shot: 'web', dmg: [8, 11], spd: 4, arc: 0.3 }, { t: 'summon', type: 'spider', n: 3 }, { t: 'charge' }] },
+  pharaoh: { name: 'Фараон Ра-Хотеп', hp: 680, dmg: [14, 18], speed: 0.95, r: 0.4, xp: 480, gold: [80, 120], sc: 1.4, z: 0, range: 1.3, cd: 1.4, sight: 22, boss: true, abCd: 2.9, res: { fire: 1.6, frost: 0.9 },
+    abil: [{ t: 'charge' }, { t: 'summon', type: 'scarab', n: 3 }, { t: 'spread', n: 3, shot: 'sand', dmg: [9, 12], spd: 4.2, arc: 0.26 }, { t: 'slam', r: 2.6, dmg: [15, 20] }, { t: 'ring', n: 10, shot: 'sand', dmg: [7, 9], spd: 3 }] },
+  demon: { name: 'Огненный Демон', hp: 780, dmg: [16, 21], speed: 1.0, r: 0.42, xp: 620, gold: [80, 120], sc: 1.4, z: 0, range: 1.3, cd: 1.4, sight: 22, boss: true, abCd: 2.8, res: { fire: 0.1, frost: 1.5 },
+    abil: [{ t: 'spread', n: 5, shot: 'fire', dmg: [10, 13], spd: 4, arc: 0.22 }, { t: 'ring', n: 10, shot: 'fire', dmg: [8, 11], spd: 3.2 }, { t: 'charge' }, { t: 'slam', r: 2.6, dmg: [16, 22] }] },
+  kraken: { name: 'Кракен', hp: 1000, dmg: [20, 26], speed: 0.85, r: 0.48, xp: 780, gold: [100, 150], sc: 1.6, z: 0, range: 1.45, cd: 1.5, sight: 22, boss: true, abCd: 2.8, slowHit: 2, res: { bolt: 1.4, fire: 1.1 },
+    abil: [{ t: 'slam', r: 3.0, dmg: [18, 24] }, { t: 'ring', n: 12, shot: 'water', dmg: [9, 12], spd: 3.2 }, { t: 'summon', type: 'jelly', n: 2 }, { t: 'spread', n: 3, shot: 'water', dmg: [11, 14], spd: 4.4, arc: 0.22 }, { t: 'summon', type: 'piranha', n: 3 }] },
+  iceGiant: { name: 'Ледяной Великан', hp: 1150, dmg: [25, 32], speed: 0.9, r: 0.46, xp: 960, gold: [100, 150], sc: 1.5, z: 0, range: 1.4, cd: 1.7, sight: 22, boss: true, abCd: 3.0, slowHit: 3, res: { frost: 0.1, fire: 1.5 },
+    abil: [{ t: 'slam', r: 3.0, dmg: [20, 26] }, { t: 'ring', n: 12, shot: 'ice', dmg: [11, 14], spd: 3 }, { t: 'spread', n: 3, shot: 'ice', dmg: [12, 16], spd: 4.5, arc: 0.2 }] },
+  colossus: { name: 'Паровой Колосс', hp: 1500, dmg: [30, 38], speed: 0.85, r: 0.5, xp: 1200, gold: [120, 180], sc: 1.65, z: 0, range: 1.5, cd: 1.6, sight: 22, boss: true, abCd: 2.7, armor: 2, res: { bolt: 1.4, fire: 0.7 },
+    abil: [{ t: 'slam', r: 3.2, dmg: [22, 29] }, { t: 'spread', n: 5, shot: 'spark', dmg: [12, 15], spd: 4.6, arc: 0.2 }, { t: 'summon', type: 'drone', n: 2 }, { t: 'ring', n: 14, shot: 'spark', dmg: [10, 13], spd: 3.4 }, { t: 'charge' }] },
+  lich: { name: 'Король-Лич', hp: 2800, dmg: [40, 52], speed: 0.8, r: 0.4, xp: 2000, gold: [0, 0], sc: 1.25, z: 0, range: 1.3, cd: 1.5, sight: 22, boss: true, abCd: 2.6,
+    abil: [{ t: 'spread', n: 3, shot: 'orb', dmg: [17, 22], spd: 4, arc: 0.22 }, { t: 'summon', type: 'shade', n: 2 }, { t: 'blink' }, { t: 'ring', n: 14, shot: 'orb', dmg: [14, 18], spd: 3.2 }, { t: 'slam', r: 2.6, dmg: [22, 30] }] }
 };
 for (const k in ENEMY) { ENEMY[k].id = k; ENEMY[k].spr = ENEMY[k].spr || k; }
 
-/* 9 уровней: пять биомов, босс в конце каждого */
+/* 17 этажей: девять миров, босс в конце каждого; порядок чередует тёмные и яркие миры */
 const LEVELS = [
   { biome: 0 }, { biome: 0, boss: 'boneKing' },
+  { biome: 5 }, { biome: 5, boss: 'treeAncient' },
   { biome: 1 }, { biome: 1, boss: 'spiderQueen' },
+  { biome: 6 }, { biome: 6, boss: 'pharaoh' },
   { biome: 2 }, { biome: 2, boss: 'demon' },
+  { biome: 7 }, { biome: 7, boss: 'kraken' },
   { biome: 3 }, { biome: 3, boss: 'iceGiant' },
+  { biome: 8 }, { biome: 8, boss: 'colossus' },
   { biome: 4, boss: 'lich', final: true }
 ];
-/* пулы врагов: [тип, вес, минимальный уровень внутри биома] */
+/* пулы врагов по номеру биома в BIOMES: [тип, вес, минимальный уровень внутри биома] */
 const POOLS = [
   [['rat', 3, 0], ['skeleton', 4, 0], ['ghost', 2, 1]],
   [['slime', 4, 0], ['spider', 4, 0], ['mushroom', 2, 0], ['orc', 2, 1]],
   [['imp', 3, 0], ['hellhound', 3, 0], ['lavaGolem', 2, 1], ['skeleton', 1, 0]],
   [['frostWolf', 3, 0], ['wraith', 3, 0], ['yeti', 2, 1]],
-  [['darkKnight', 4, 0], ['shade', 3, 0], ['lavaGolem', 1, 0], ['yeti', 1, 0], ['skeleton', 1, 0]]
+  [['darkKnight', 4, 0], ['shade', 3, 0], ['lavaGolem', 1, 0], ['yeti', 1, 0], ['skeleton', 1, 0]],
+  [['wolf', 4, 0], ['hornet', 3, 0], ['wisp', 2, 0], ['treant', 2, 1]],
+  [['scarab', 4, 0], ['scorpion', 3, 0], ['mummy', 3, 0], ['djinn', 2, 1]],
+  [['piranha', 3, 0], ['jelly', 3, 0], ['crab', 2, 0], ['drowned', 3, 1]],
+  [['cogHound', 3, 0], ['drone', 3, 0], ['turret', 2, 0], ['automaton', 3, 1]]
 ];
 const firstLevelOf = b => LEVELS.findIndex(l => l.biome === b);
 
@@ -974,666 +1673,56 @@ const STAT_PCT = { crit: 1, life: 1, spd: 1 };
 const SLOT_NAME = { weapon: 'Оружие', helm: 'Шлем', armor: 'Броня', ring: 'Кольцо', amulet: 'Амулет' };
 const xpNext = L => Math.round(20 * Math.pow(L, 1.45));
 
-/* ============ МУЛЬТИПЛЕЕР: WebRTC P2P (ручной SDP) ============ */
-/* Обмен SDP offer/answer через буфер обмена — никаких внешних серверов */
-const MP = {
-  mode: null,           // 'host' | 'client' | 'connected'
-  pc: null,             // RTCPeerConnection
-  dc: null,             // RTCDataChannel
-  peerId: null,         // our player ID (1 = host, 2 = client)
-  connected: false,
-
-  // Game state for sync
-  sync: {
-    seq: 0,
-    lastAck: 0,
-    pending: new Map(),
-    entities: new Map(),
-    projectiles: [],
-    pickups: [],
-    floor: 0,
-    seed: 0,
-    bossDead: false,
-    keyFound: false
-  },
-
-  // Other player state
-  peer: {
-    x: 0, y: 0, a: 0,
-    hp: 30, maxHp: 30, mp: 12, maxMp: 12,
-    lv: 1, xp: 0, gold: 0, heal: 0, mana: 0,
-    spell: 'fire', sp: 1, spells: {fire:1, frost:0, bolt:0, heal:0},
-    gear: {}, bag: [],
-    name: 'Игрок 2',
-    weapon: null,
-    anim: { swing: 0, cast: 0, hurt: 0 },
-    dead: false,
-    slowT: 0,
-    poison: 0
-  }
+/* ============ ДЕКОР ОКРУЖЕНИЯ: свойства предметов и наборы по мирам ============ */
+/* spr: имя спрайта; sc: высота в долях стены; z: высота низа над полом; r: радиус столкновения (0: можно пройти);
+   glow: светится сам; hang: висит под потолком; brk: разбивается ударом (текст сообщения); cor: уместен в коридоре */
+const DECOR = {
+  barrel: { spr: 'barrel', sc: 0.6, z: 0, r: 0.3, brk: 'Бочка разбита' }, bones: { spr: 'bones', sc: 0.4, z: 0, cor: 1 },
+  crate: { spr: 'crate', sc: 0.5, z: 0, r: 0.3, brk: 'Ящик разбит' }, crateStack: { spr: 'crateStack', sc: 0.62, z: 0, r: 0.32 },
+  crateWet: { spr: 'crateWet', sc: 0.5, z: 0, r: 0.3, brk: 'Ящик рассыпался' }, crateIron: { spr: 'crateIron', sc: 0.5, z: 0, r: 0.3, brk: 'Ящик смят' },
+  urn: { spr: 'urn', sc: 0.5, z: 0, r: 0.22, brk: 'Урна разбита' }, urnTeal: { spr: 'urnTeal', sc: 0.5, z: 0, r: 0.22, brk: 'Амфора разбита' }, urnGold: { spr: 'urnGold', sc: 0.5, z: 0, r: 0.22, brk: 'Сосуд разбит' },
+  oilDrum: { spr: 'oilDrum', sc: 0.5, z: 0, r: 0.28, brk: 'Бочка пробита' },
+  skulls: { spr: 'skulls', sc: 0.36, z: 0, cor: 1 }, skullsSand: { spr: 'skullsSand', sc: 0.36, z: 0, cor: 1 }, bonesSea: { spr: 'bonesSea', sc: 0.4, z: 0, cor: 1 },
+  rubble: { spr: 'rubble', sc: 0.36, z: 0, cor: 1 }, rubbleSand: { spr: 'rubbleSand', sc: 0.36, z: 0, cor: 1 }, rubbleBrown: { spr: 'rubbleBrown', sc: 0.36, z: 0, cor: 1 },
+  candles: { spr: 'candles', sc: 0.36, z: 0, glow: 1 },
+  banner: { spr: 'banner', sc: 0.62, z: 0.38, hang: 1 }, bannerPurple: { spr: 'bannerPurple', sc: 0.62, z: 0.38, hang: 1 }, bannerGold: { spr: 'bannerGold', sc: 0.62, z: 0.38, hang: 1 }, bannerTeal: { spr: 'bannerTeal', sc: 0.62, z: 0.38, hang: 1 },
+  chains: { spr: 'chains', sc: 0.55, z: 0.45, hang: 1, cor: 1 }, chainsRust: { spr: 'chainsRust', sc: 0.55, z: 0.45, hang: 1, cor: 1 },
+  cobweb: { spr: 'cobweb', sc: 0.5, z: 0.5, hang: 1, cor: 1 }, webSea: { spr: 'webSea', sc: 0.5, z: 0.5, hang: 1, cor: 1 },
+  stalagmite: { spr: 'stalagmite', sc: 0.6, z: 0, r: 0.3, cor: 0 }, stalactite: { spr: 'stalactite', sc: 0.55, z: 0.45, hang: 1, cor: 1 },
+  obsidian: { spr: 'obsidian', sc: 0.6, z: 0, r: 0.3 }, hotStalactite: { spr: 'hotStalactite', sc: 0.55, z: 0.45, hang: 1, cor: 1 },
+  iceSpikes: { spr: 'iceSpikes', sc: 0.6, z: 0, r: 0.3 }, iciclesHang: { spr: 'iciclesHang', sc: 0.55, z: 0.45, hang: 1, cor: 1 },
+  crystalTeal: { spr: 'crystalTeal', sc: 0.6, z: 0, r: 0.28, glow: 1 }, crystalBlueCave: { spr: 'crystalBlueCave', sc: 0.6, z: 0, r: 0.28, glow: 1 },
+  crystalPurple: { spr: 'crystalPurple', sc: 0.6, z: 0, r: 0.28, glow: 1 }, crystalRed: { spr: 'crystalRed', sc: 0.6, z: 0, r: 0.28, glow: 1 }, crystalIce: { spr: 'crystalIce', sc: 0.95, z: 0, r: 0.3, glow: 1 },
+  shroomGlow: { spr: 'shroomGlow', sc: 0.4, z: 0, glow: 1, cor: 1 }, shroomPale: { spr: 'shroomPale', sc: 0.4, z: 0, glow: 1, cor: 1 }, shroomRed: { spr: 'shroomRed', sc: 0.4, z: 0, cor: 1 },
+  fern: { spr: 'fern', sc: 0.5, z: 0, cor: 1 }, fernSea: { spr: 'fernSea', sc: 0.5, z: 0, cor: 1 }, flowers: { spr: 'flowers', sc: 0.4, z: 0, cor: 1 }, flowersTeal: { spr: 'flowersTeal', sc: 0.4, z: 0, cor: 1 },
+  bush: { spr: 'bush', sc: 0.5, z: 0, r: 0.28 }, tree: { spr: 'tree', sc: 0.98, z: 0, r: 0.3 }, log: { spr: 'log', sc: 0.36, z: 0, cor: 1 },
+  vines: { spr: 'vines', sc: 0.55, z: 0.45, hang: 1, cor: 1 }, roots: { spr: 'roots', sc: 0.55, z: 0.45, hang: 1, cor: 1 },
+  lanternHang: { spr: 'lanternHang', sc: 0.4, z: 0.55, hang: 1, glow: 1, cor: 1 }, jellyLamp: { spr: 'jellyLamp', sc: 0.45, z: 0.5, hang: 1, glow: 1, cor: 1 },
+  cactus: { spr: 'cactus', sc: 0.85, z: 0, r: 0.28 }, sandRocks: { spr: 'sandRocks', sc: 0.36, z: 0, cor: 1 }, dune: { spr: 'dune', sc: 0.3, z: 0, cor: 1 },
+  columnSand: { spr: 'columnSand', sc: 0.9, z: 0, r: 0.3 }, columnGray: { spr: 'columnGray', sc: 0.9, z: 0, r: 0.3 }, columnPurple: { spr: 'columnPurple', sc: 0.92, z: 0, r: 0.3 }, columnTeal: { spr: 'columnTeal', sc: 0.9, z: 0, r: 0.3 },
+  statueStone: { spr: 'statueStone', sc: 0.9, z: 0, r: 0.3 }, statueAnubis: { spr: 'statueAnubis', sc: 0.95, z: 0, r: 0.3 }, statueGold: { spr: 'statueGold', sc: 0.9, z: 0, r: 0.3 },
+  coralBranch: { spr: 'coralBranch', sc: 0.62, z: 0, r: 0.28 }, coralTube: { spr: 'coralTube', sc: 0.6, z: 0, r: 0.3 }, coralBrain: { spr: 'coralBrain', sc: 0.36, z: 0, cor: 1 },
+  seaweed: { spr: 'seaweed', sc: 0.62, z: 0, cor: 1 }, shells: { spr: 'shells', sc: 0.3, z: 0, cor: 1 }, anchor: { spr: 'anchor', sc: 0.9, z: 0, r: 0.26 },
+  pipeSteam: { spr: 'pipeSteam', sc: 0.55, z: 0.45, hang: 1, cor: 1 }, cables: { spr: 'cables', sc: 0.5, z: 0.5, hang: 1, cor: 1 },
+  gear: { spr: 'gear', sc: 0.45, z: 0, cor: 1 }, machine: { spr: 'machine', sc: 0.8, z: 0, r: 0.34 }, lampPost: { spr: 'lampPost', sc: 0.95, z: 0, r: 0.2, glow: 1 },
+  brazier: { spr: 'brazier', sc: 0.75, z: 0, r: 0.25, glow: 1 }, brazierPurple: { spr: 'brazierPurple', sc: 0.75, z: 0, r: 0.25, glow: 1 },
+  brazierIce: { spr: 'brazierIce', sc: 0.75, z: 0, r: 0.25, glow: 1 }, brazierSand: { spr: 'brazierSand', sc: 0.75, z: 0, r: 0.25, glow: 1 },
+  candelabra: { spr: 'candelabra', sc: 0.9, z: 0, r: 0.22, glow: 1 }, obelisk: { spr: 'obelisk', sc: 0.95, z: 0, r: 0.3 }, torchStand: { spr: 'torchStand', sc: 0.8, z: 0, r: 0.2, glow: 1 },
+  tomb: { spr: 'tomb', sc: 0.55, z: 0, r: 0.26 }, coffin: { spr: 'coffin', sc: 0.9, z: 0, r: 0.3 },
+  snow: { spr: 'snow', sc: 0.35, z: 0, cor: 1 }, emberPile: { spr: 'emberPile', sc: 0.36, z: 0, glow: 1, cor: 1 }, lavaRock: { spr: 'lavaRock', sc: 0.42, z: 0, r: 0.28 }
 };
-
-function mpInit() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
-function mpCreatePeerConnection() {
-  const pc = new RTCPeerConnection({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-    ],
-    iceCandidatePoolSize: 10
-  });
-
-  pc.onicecandidate = e => {
-    if (e.candidate) {
-      console.log('ICE candidate:', e.candidate.type);
-    } else {
-      console.log('ICE gathering complete');
-    }
-  };
-
-  pc.onconnectionstatechange = () => {
-    console.log('WebRTC state:', pc.connectionState, '(ICE:', pc.iceConnectionState, ')');
-    if (pc.connectionState === 'connected') {
-      MP.connected = true;
-      mpOnConnected();
-    } else if (pc.connectionState === 'failed') {
-      console.error('WebRTC connection failed');
-      mpOnDisconnected();
-    } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
-      mpOnDisconnected();
-    }
-  };
-
-  pc.oniceconnectionstatechange = () => {
-    console.log('ICE connection state:', pc.iceConnectionState);
-  };
-
-  pc.ondatachannel = e => {
-    console.log('Data channel received:', e.channel.label);
-    MP.dc = e.channel;
-    mpSetupDataChannel();
-  };
-
-  return pc;
-}
-
-/* --- Ждём завершения сбора ICE-кандидатов --- */
-function waitForIceGathering(pc) {
-  return new Promise(resolve => {
-    if (pc.iceGatheringState === 'complete') {
-      resolve();
-      return;
-    }
-    const onStateChange = () => {
-      if (pc.iceGatheringState === 'complete') {
-        pc.onicegatheringstatechange = null;
-        resolve();
-      }
-    };
-    pc.onicegatheringstatechange = onStateChange;
-    // Fallback через 10 сек
-    setTimeout(() => {
-      pc.onicegatheringstatechange = null;
-      resolve();
-    }, 10000);
-  });
-}
-
-/* --- DataChannel --- */
-function mpSetupDataChannel() {
-  if (!MP.dc) return;
-  MP.dc.binaryType = 'arraybuffer';
-  MP.dc.onopen = () => { console.log('Data channel open'); MP.connected = true; mpOnConnected(); };
-  MP.dc.onclose = () => { console.log('Data channel closed'); mpOnDisconnected(); };
-  MP.dc.onerror = e => console.error('Data channel error:', e);
-  MP.dc.onmessage = e => {
-    try { mpHandleMessage(JSON.parse(new TextDecoder().decode(e.data))); }
-    catch (err) { console.error('Parse error:', err); }
-  };
-}
-
-function mpSend(msg) {
-  if (MP.dc && MP.dc.readyState === 'open') {
-    MP.dc.send(new TextEncoder().encode(JSON.stringify(msg)));
-  } else {
-    MP.sync.pending.set(MP.sync.seq++, msg);
-  }
-}
-
-/* --- Ручной обмен SDP через буфер обмена --- */
-function mpCopyToClipboard(text, label) {
-  navigator.clipboard.writeText(text).then(() => {
-    toast(label + ' скопирован', 1500);
-  }).catch(() => {
-    toast('Ошибка копирования', 1500);
-  });
-}
-
-async function mpPasteFromClipboard() {
-  try {
-    return await navigator.clipboard.readText();
-  } catch (e) {
-    return null;
-  }
-}
-
-/* --- Хост: создаёт игру и Offer --- */
-async function mpCreateHost() {
-  MP.mode = 'host';
-  MP.peerId = 1;
-  MP.connected = false;
-
-  MP.pc = mpCreatePeerConnection();
-  MP.dc = MP.pc.createDataChannel('game', { ordered: true });
-  mpSetupDataChannel();
-
-  try {
-    const offer = await MP.pc.createOffer();
-    await MP.pc.setLocalDescription(offer);
-    // Ждём завершения сбора ICE-кандидатов
-    $('mpHostStatus').textContent = 'Сбор ICE-кандидатов...';
-    await waitForIceGathering(MP.pc);
-  } catch (e) {
-    $('mpHostStatus').textContent = 'Ошибка создания Offer: ' + e.message;
-    $('mpHostStatus').className = 'bad';
-    return;
-  }
-
-  $('mpHostOffer').hidden = false;
-  $('btnCreateHost').hidden = true;
-  $('btnJoinAsClient').hidden = true;
-  $('btnCancelHost').hidden = false;
-
-  // Сохраняем offer для копирования
-  MP.pendingOffer = MP.pc.localDescription;
-  $('mpHostStatus').textContent = 'Offer готов — скопируйте и отправьте клиенту';
-  $('mpHostStatus').className = 'good';
-}
-
-/* --- Клиент: вставляет Offer, создаёт Answer --- */
-async function mpJoinAsClient() {
-  MP.mode = 'client';
-  MP.peerId = 2;
-  MP.connected = false;
-
-  $('mpClientOffer').hidden = false;
-  $('btnCreateHost').hidden = true;
-  $('btnJoinAsClient').hidden = true;
-  $('btnCancelClient').hidden = false;
-  $('mpClientStatus').textContent = '';
-}
-
-/* --- Хост: копирует Offer --- */
-function mpCopyOffer() {
-  if (MP.pendingOffer) {
-    mpCopyToClipboard(JSON.stringify({ type: 'offer', sdp: MP.pendingOffer.sdp }), 'Offer');
-  }
-}
-
-/* --- Хост: вставляет Answer --- */
-async function mpPasteAnswer() {
-  const text = await mpPasteFromClipboard();
-  if (!text) { $('mpHostStatus').textContent = 'Буфер пуст'; $('mpHostStatus').className = 'bad'; return; }
-
-  if (!MP.pc) { $('mpHostStatus').textContent = 'Нет соединения (создайте игру заново)'; $('mpHostStatus').className = 'bad'; return; }
-
-  try {
-    const data = JSON.parse(text);
-    if (!data.sdp || data.type !== 'answer') throw new Error('Не Answer');
-
-    // Ensure we are in have-local-offer state
-    if (MP.pc.signalingState !== 'have-local-offer') {
-      console.log('Unexpected signaling state:', MP.pc.signalingState, 're-setting local offer');
-      if (MP.pendingOffer) {
-        await MP.pc.setLocalDescription(MP.pendingOffer);
-      } else {
-        throw new Error('Нет сохранённого Offer');
-      }
-    }
-
-    await MP.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }));
-    $('mpHostStatus').textContent = 'Answer принят, соединяемся...';
-    $('mpHostStatus').className = 'good';
-  } catch (e) {
-    $('mpHostStatus').textContent = 'Ошибка: ' + e.message;
-    $('mpHostStatus').className = 'bad';
-  }
-}
-
-/* --- Клиент: вставляет Offer и создаёт Answer --- */
-async function mpPasteOfferCreateAnswer() {
-  const text = await mpPasteFromClipboard();
-  if (!text) { $('mpClientStatus').textContent = 'Буфер пуст'; $('mpClientStatus').className = 'bad'; return; }
-
-  try {
-    const data = JSON.parse(text);
-    if (!data.sdp || data.type !== 'offer') throw new Error('Не Offer');
-
-    MP.pc = mpCreatePeerConnection();
-    await MP.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }));
-    const answer = await MP.pc.createAnswer();
-    await MP.pc.setLocalDescription(answer);
-    // Ждём завершения сбора ICE-кандидатов
-    $('mpClientStatus').textContent = 'Сбор ICE-кандидатов...';
-    await waitForIceGathering(MP.pc);
-
-    MP.pendingAnswer = MP.pc.localDescription;
-    $('mpClientStatus').textContent = 'Answer готов — скопируйте и верните хосту';
-    $('mpClientStatus').className = 'good';
-  } catch (e) {
-    $('mpClientStatus').textContent = 'Ошибка: ' + e.message;
-    $('mpClientStatus').className = 'bad';
-  }
-}
-
-/* --- Клиент: копирует Answer --- */
-function mpCopyAnswer() {
-  if (MP.pendingAnswer) {
-    mpCopyToClipboard(JSON.stringify({ type: 'answer', sdp: MP.pendingAnswer.sdp }), 'Answer');
-  }
-}
-
-/* --- Отмена / отключение --- */
-function mpOnDisconnected() {
-  MP.connected = false;
-  console.log('Disconnected');
-  if (MP.mode && G.mode === 'play') { toast('Связь потеряна!', 3000); msg('Игрок отключился', 'bad'); }
-
-  $('mpHostOffer').hidden = true;
-  $('mpClientOffer').hidden = true;
-  $('mpConnected').hidden = true;
-  $('btnCreateHost').hidden = false;
-  $('btnJoinAsClient').hidden = false;
-  $('btnCancelHost').hidden = true;
-  $('btnCancelClient').hidden = true;
-  $('mpPasteAnswer').value = '';
-  $('mpPasteOffer').value = '';
-  $('mpHostStatus').textContent = '';
-  $('mpClientStatus').textContent = '';
-
-  if (MP.pc) { MP.pc.close(); MP.pc = null; }
-  MP.dc = null; MP.mode = null; MP.peerId = null;
-  MP.pendingOffer = null; MP.pendingAnswer = null;
-}
-
-function mpOnConnected() {
-  console.log('Multiplayer connected!');
-  $('mpHostOffer').hidden = true;
-  $('mpClientOffer').hidden = true;
-  $('mpConnected').hidden = false;
-  $('btnCancelHost').hidden = true;
-  $('btnCancelClient').hidden = true;
-  if (MP.peerId === 1) mpSyncFullState();
-}
-
-function mpHandleMessage(m) {
-  switch (m.type) {
-    case 'state':
-    case 'player':
-      mpApplyState(m.data);
-      break;
-    case 'entity':
-      mpApplyEntityUpdate(m.data);
-      break;
-    case 'projectile':
-      mpApplyProjectile(m.data);
-      break;
-    case 'pickup':
-      mpApplyPickup(m.data);
-      break;
-    case 'floor':
-      mpChangeFloor(m.data);
-      break;
-    case 'chat':
-      msg(m.data.text, m.data.cls);
-      break;
-    case 'sync-request':
-      mpSyncFullState();
-      break;
-    case 'ack':
-      MP.sync.lastAck = m.seq;
-      break;
-    case 'game-start':
-      mpOnGameStart(m.data);
-      break;
-    case 'peer-state':
-      mpApplyPeerState(m.data);
-      break;
-    case 'peer-action':
-      mpHandlePeerAction(m.data);
-      break;
-  }
-}
-
-function mpApplyPeerState(data) {
-  // Host receives peer's player state
-  if (MP.peerId !== 1) return;
-  if (!data) return;
-
-  const peer = MP.peer;
-  if (!peer) return;
-
-  // Safe merge: only overwrite defined values (allows 0)
-  if (data.x !== undefined) peer.x = data.x;
-  if (data.y !== undefined) peer.y = data.y;
-  if (data.a !== undefined) peer.a = data.a;
-  if (data.hp !== undefined) peer.hp = data.hp;
-  if (data.maxHp !== undefined) peer.maxHp = data.maxHp;
-  if (data.mp !== undefined) peer.mp = data.mp;
-  if (data.maxMp !== undefined) peer.maxMp = data.maxMp;
-  if (data.lv !== undefined) peer.lv = data.lv;
-  if (data.xp !== undefined) peer.xp = data.xp;
-  if (data.gold !== undefined) peer.gold = data.gold;
-  if (data.heal !== undefined) peer.heal = data.heal;
-  if (data.mana !== undefined) peer.mana = data.mana;
-  if (data.spell !== undefined) peer.spell = data.spell;
-  if (data.sp !== undefined) peer.sp = data.sp;
-  if (data.spells !== undefined) peer.spells = data.spells;
-  if (data.anim !== undefined) peer.anim = data.anim;
-  if (data.dead !== undefined) peer.dead = data.dead;
-  if (data.atk !== undefined) peer.atk = data.atk;
-  if (data.def !== undefined) peer.def = data.def;
-  if (data.mag !== undefined) peer.mag = data.mag;
-  if (data.crit !== undefined) peer.crit = data.crit;
-  if (data.life !== undefined) peer.life = data.life;
-  if (data.spdMul !== undefined) peer.spdMul = data.spdMul;
-  if (data.slowT !== undefined) peer.slowT = data.slowT;
-  if (data.poison !== undefined) peer.poison = data.poison;
-  if (data.weapon !== undefined) peer.weapon = data.weapon;
-}
-
-function mpOnGameStart(data) {
-  // Peer receives game start from host
-  if (MP.peerId !== 2) return;
-  if (!data) return;
-
-  // Guard: already in game, ignore duplicate game-start
-  if (G.mode === 'play' && G.world && G.world.start) return;
-
-  // --- Hard reset of any pause / input locks / overlays ---
-  G.mode = 'play';
-  G.paused = false;
-  hideOverlays();
-  $('dialog').hidden = true;
-  $('msgs').textContent = '';
-  keys.clear();
-  held = { atkTouch:false, fireTouch:false, useTouch:false, healTouch:false, manaTouch:false, stick:null };
-  drag = { active:false, x:0, y:0, moved:0, t:0 };
-
-  // Load the floor with the host's seed
-  G.seed = data.seed ?? G.seed;
-  loadFloor(data.floor ?? G.floor);
-
-  // Ensure world loaded
-  if (!G.world || !G.world.start) return;
-
-  // Initialize local player (we are player 2)
-  // P is already initialized by newGame() but we need to sync position
-  P.x = G.world.start.x;
-  P.y = G.world.start.y;
-  P.a = G.world.start.a;
-  P.hp = P.maxHp;
-  P.mp = P.maxMp;
-  P.gold = 0;
-  P.heal = 2;
-  P.mana = 1;
-  P.lv = 1;
-  P.xp = 0;
-  P.sp = 1;
-  P.spells = {fire:1, frost:0, bolt:0, heal:0};
-  P.gear = emptyGear();
-  P.bag = [];
-  P.gear.weapon = genItem(0, { slot: 'weapon', type: 'sword', rarity: 0 });
-  recalc();
-
-  // Set peer (player 1) initial state
-  const startingWeapon = genItem(0, { slot: 'weapon', type: 'sword', rarity: 0 });
-  MP.peer = {
-    x: P.x, y: P.y, a: P.a,
-    hp: P.maxHp, maxHp: P.maxHp, mp: P.maxMp, maxMp: P.maxMp,
-    lv: 1, xp: 0, gold: 0, heal: 2, mana: 1,
-    spell: 'fire', sp: 1, spells: {fire:1, frost:0, bolt:0, heal:0},
-    gear: emptyGear(), bag: [],
-    name: 'Игрок 1',
-    weapon: startingWeapon,
-    anim: { swing: 0, cast: 0, hurt: 0 },
-    dead: false,
-    slowT: 0,
-    poison: 0
-  };
-  MP.peer.gear.weapon = startingWeapon;
-
-  beginPlay();
-  msg('Игра началась! Игрок 1 — хост.', 'gold');
-
-  // Immediately send our state so host sees us
-  mpSendPeerState();
-}
-
-function mpSyncFullState() {
-  const weapon = P.gear.weapon;
-  const state = {
-    floor: G.floor,
-    seed: G.seed,
-    time: G.time,
-    player: {
-      x: P.x, y: P.y, a: P.a,
-      hp: P.hp, maxHp: P.maxHp, mp: P.mp, maxMp: P.maxMp,
-      lv: P.lv, xp: P.xp, gold: P.gold, heal: P.heal, mana: P.mana,
-      spell: P.spell, sp: P.sp, spells: {...P.spells},
-      atk: P.atk, def: P.def, mag: P.mag, crit: P.crit, life: P.life, spdMul: P.spdMul,
-      slowT: P.slowT, poison: P.poison,
-      weapon: weapon ? { type: weapon.type, dmg: weapon.dmg, name: weapon.name, style: WTYPES[weapon.type]?.style, reach: WTYPES[weapon.type]?.reach, arc: WTYPES[weapon.type]?.arc, cleave: WTYPES[weapon.type]?.cleave, stun: WTYPES[weapon.type]?.stun, cd: WTYPES[weapon.type]?.cd } : null
-    },
-    entities: G.ents.map(e => mpSerializeEntity(e)),
-    projectiles: G.proj.map(p => mpSerializeProjectile(p)),
-    bossDead: F.bossDead,
-    keyFound: F.key
-  };
-  mpSend({ type: 'state', data: state, seq: MP.sync.seq++ });
-}
-
-function mpSerializeEntity(e) {
-  const base = { id: e.id || Math.random().toString(36).slice(2), t: e.t, x: e.x, y: e.y, kind: e.kind };
-  if (e.kind === 'enemy') {
-    return {...base, hp: e.hp, maxHp: e.maxHp, alert: e.alert, dead: e.dead, wind: e.wind, slow: e.slow, freeze: e.freeze, stun: e.stun, elite: e.elite, owner: e.owner };
-  }
-  if (e.kind === 'pickup' || e.kind === 'item') {
-    return {...base, val: e.val, item: e.item ? {id: e.item.id, slot: e.item.slot, name: e.item.name, rarity: e.item.rarity} : null };
-  }
-  if (e.t === 'chest') return {...base, opened: e.opened, vault: e.vault};
-  if (e.t === 'altar') return {...base, used: e.used};
-  if (e.t === 'merchant') return {...base, stock: e.stock?.map(s => ({id: s.id, slot: s.slot, name: s.name, price: s.price, rarity: s.rarity}))};
-  return base;
-}
-
-function mpSerializeProjectile(p) {
-  return { x: p.x, y: p.y, dx: p.dx, dy: p.dy, spd: p.spd, dmg: p.dmg, friendly: p.friendly, kind: p.kind, life: p.life, who: p.who, radius: p.radius };
-}
-
-function mpApplyState(data) {
-  // Host sends full state, peer applies it
-  if (MP.peerId === 1) return; // Host doesn't apply
-  if (!data) return;
-
-  // NOTE: floor/seed sync is done only via explicit 'floor' message (mpChangeFloor)
-  // Periodic state updates must NOT reload the floor — it would reset local player position
-
-  // Sync player (peer's view of host) — safe merge: only overwrite defined values
-  if (data.player) {
-    const p = data.player;
-    if (p.x !== undefined) MP.peer.x = p.x;
-    if (p.y !== undefined) MP.peer.y = p.y;
-    if (p.a !== undefined) MP.peer.a = p.a;
-    if (p.hp !== undefined) MP.peer.hp = p.hp;
-    if (p.maxHp !== undefined) MP.peer.maxHp = p.maxHp;
-    if (p.mp !== undefined) MP.peer.mp = p.mp;
-    if (p.maxMp !== undefined) MP.peer.maxMp = p.maxMp;
-    if (p.lv !== undefined) MP.peer.lv = p.lv;
-    if (p.xp !== undefined) MP.peer.xp = p.xp;
-    if (p.gold !== undefined) MP.peer.gold = p.gold;
-    if (p.heal !== undefined) MP.peer.heal = p.heal;
-    if (p.mana !== undefined) MP.peer.mana = p.mana;
-    if (p.spell !== undefined) MP.peer.spell = p.spell;
-    if (p.sp !== undefined) MP.peer.sp = p.sp;
-    if (p.spells !== undefined) MP.peer.spells = p.spells;
-    if (p.anim !== undefined) MP.peer.anim = p.anim;
-    if (p.dead !== undefined) MP.peer.dead = p.dead;
-    if (p.atk !== undefined) MP.peer.atk = p.atk;
-    if (p.def !== undefined) MP.peer.def = p.def;
-    if (p.mag !== undefined) MP.peer.mag = p.mag;
-    if (p.crit !== undefined) MP.peer.crit = p.crit;
-    if (p.life !== undefined) MP.peer.life = p.life;
-    if (p.spdMul !== undefined) MP.peer.spdMul = p.spdMul;
-    if (p.slowT !== undefined) MP.peer.slowT = p.slowT;
-    if (p.poison !== undefined) MP.peer.poison = p.poison;
-    if (p.weapon !== undefined) MP.peer.weapon = p.weapon;
-  }
-
-  // Sync entities
-  if (Array.isArray(data.entities)) {
-    mpSyncEntities(data.entities);
-  }
-
-  // Sync projectiles
-  if (Array.isArray(data.projectiles)) {
-    G.proj = data.projectiles.map(p => ({...p}));
-  }
-
-  F.bossDead = data.bossDead ?? F.bossDead;
-  F.key = data.keyFound ?? F.key;
-  G.time = data.time ?? G.time;
-}
-
-function mpSyncEntities(entities) {
-  // Merge entities from host
-  const newEnts = [];
-  for (const se of entities) {
-    let e = G.ents.find(x => (x.id === se.id) || (x.t === se.t && Math.hypot(x.x - se.x, x.y - se.y) < 0.5));
-    if (e) {
-      // Update existing
-      if (se.hp !== undefined) e.hp = se.hp;
-      if (se.alert !== undefined) e.alert = se.alert;
-      if (se.dead !== undefined) e.dead = se.dead;
-      if (se.wind !== undefined) e.wind = se.wind;
-      if (se.slow !== undefined) e.slow = se.slow;
-      if (se.freeze !== undefined) e.freeze = se.freeze;
-      if (se.stun !== undefined) e.stun = se.stun;
-      if (se.opened !== undefined) e.opened = se.opened;
-      if (se.used !== undefined) e.used = se.used;
-      e.x = se.x; e.y = se.y;
-      newEnts.push(e);
-    } else {
-      // Create new
-      const ne = spawn(se);
-      ne.id = se.id;
-      if (se.hp !== undefined) ne.hp = se.hp;
-      if (se.alert !== undefined) ne.alert = se.alert;
-      if (se.dead !== undefined) ne.dead = se.dead;
-      newEnts.push(ne);
-    }
-  }
-  // Remove entities not in sync (dead ones)
-  G.ents = newEnts;
-}
-
-function mpApplyEntityUpdate(data) {
-  const e = G.ents.find(x => x.id === data.id);
-  if (e) {
-    if (data.hp !== undefined) e.hp = data.hp;
-    if (data.alert !== undefined) e.alert = data.alert;
-    if (data.dead !== undefined) e.dead = data.dead;
-    if (data.x !== undefined) e.x = data.x;
-    if (data.y !== undefined) e.y = data.y;
-    if (data.wind !== undefined) e.wind = data.wind;
-    if (data.slow !== undefined) e.slow = data.slow;
-    if (data.freeze !== undefined) e.freeze = data.freeze;
-    if (data.stun !== undefined) e.stun = data.stun;
-    if (data.opened !== undefined) e.opened = data.opened;
-    if (data.used !== undefined) e.used = data.used;
-  }
-}
-
-function mpApplyProjectile(data) {
-  G.proj.push({...data});
-}
-
-function mpApplyPickup(data) {
-  // Spawn pickup
-  G.ents.push(spawn({ t: data.t, x: data.x, y: data.y, val: data.val, item: data.item }));
-}
-
-function mpChangeFloor(data) {
-  if (data.floor !== G.floor) {
-    loadFloor(data.floor);
-    G.seed = data.seed;
-  }
-}
-
-function mpSendPlayerUpdate() {
-  if (!MP.connected || MP.peerId !== 1) return; // Only host sends authoritative state
-
-  const weapon = P.gear.weapon;
-  const update = {
-    x: P.x, y: P.y, a: P.a,
-    hp: P.hp, maxHp: P.maxHp, mp: P.mp, maxMp: P.maxMp,
-    lv: P.lv, xp: P.xp, gold: P.gold, heal: P.heal, mana: P.mana,
-    spell: P.spell, sp: P.sp, spells: {...P.spells},
-    anim: { swing: G.swing, cast: G.cast, hurt: G.hurt },
-    atk: P.atk, def: P.def, mag: P.mag, crit: P.crit, life: P.life, spdMul: P.spdMul,
-    slowT: P.slowT, poison: P.poison,
-    weapon: weapon ? { type: weapon.type, dmg: weapon.dmg, name: weapon.name, style: WTYPES[weapon.type]?.style, reach: WTYPES[weapon.type]?.reach, arc: WTYPES[weapon.type]?.arc, cleave: WTYPES[weapon.type]?.cleave, stun: WTYPES[weapon.type]?.stun, cd: WTYPES[weapon.type]?.cd } : null
-  };
-  mpSend({ type: 'player', data: update });
-}
-
-function mpSendInput(input) {
-  if (!MP.connected) return;
-  mpSend({ type: 'input', data: input });
-}
-
-function mpSendEntityUpdate(e) {
-  if (!MP.connected) return;
-  mpSend({
-    type: 'entity',
-    data: {
-      id: e.id,
-      hp: e.hp,
-      alert: e.alert,
-      dead: e.dead,
-      x: e.x, y: e.y,
-      wind: e.wind, slow: e.slow, freeze: e.freeze, stun: e.stun,
-      opened: e.opened, used: e.used
-    }
-  });
-}
-
-function mpSendProjectile(p) {
-  if (!MP.connected) return;
-  mpSend({ type: 'projectile', data: mpSerializeProjectile(p) });
-}
-
-function mpSendPickup(t, x, y, val, item) {
-  if (!MP.connected) return;
-  mpSend({ type: 'pickup', data: { t, x, y, val, item: item ? {id: item.id, slot: item.slot, name: item.name, rarity: item.rarity} : null } });
-}
-
-function mpSendFloorChange() {
-  if (!MP.connected || MP.peerId !== 1) return;
-  mpSend({ type: 'floor', data: { floor: G.floor, seed: G.seed } });
-}
-
-function mpSendChat(text, cls) {
-  if (!MP.connected) return;
-  mpSend({ type: 'chat', data: { text, cls } });
-}
+/* наборы по миру: [ключ, вес] */
+const DECOR_SETS = {
+  crypt: [['barrel', 3], ['bones', 4], ['crate', 2], ['urn', 2], ['skulls', 3], ['rubble', 2], ['candles', 2], ['banner', 2], ['chains', 2], ['cobweb', 3], ['tomb', 3], ['coffin', 2], ['columnGray', 1], ['statueStone', 1]],
+  cave: [['barrel', 1], ['bones', 3], ['stalagmite', 4], ['stalactite', 3], ['crystalTeal', 2], ['crystalBlueCave', 1], ['shroomGlow', 4], ['shroomPale', 2], ['roots', 2], ['rubble', 2], ['cobweb', 2]],
+  fire: [['barrel', 1], ['bones', 3], ['obsidian', 4], ['hotStalactite', 3], ['emberPile', 3], ['lavaRock', 3], ['brazier', 2], ['chainsRust', 2], ['skulls', 2], ['rubbleBrown', 2], ['crystalRed', 2]],
+  ice: [['bones', 2], ['iceSpikes', 3], ['crystalIce', 3], ['iciclesHang', 4], ['snow', 4], ['brazierIce', 1], ['rubble', 2], ['crate', 1]],
+  throne: [['bones', 2], ['candelabra', 3], ['obelisk', 2], ['bannerPurple', 3], ['brazierPurple', 2], ['crystalPurple', 3], ['columnPurple', 2], ['skulls', 3], ['chains', 2], ['urn', 2], ['statueStone', 1], ['cobweb', 2]],
+  forest: [['bones', 1], ['tree', 4], ['bush', 4], ['fern', 5], ['flowers', 4], ['shroomRed', 3], ['log', 2], ['vines', 4], ['lanternHang', 2], ['rubbleBrown', 1]],
+  desert: [['bones', 2], ['cactus', 3], ['columnSand', 3], ['statueAnubis', 2], ['statueGold', 1], ['urnGold', 2], ['urn', 2], ['sandRocks', 4], ['dune', 3], ['skullsSand', 2], ['bannerGold', 3], ['brazierSand', 2], ['rubbleSand', 3], ['crate', 1]],
+  sunken: [['bonesSea', 3], ['coralBranch', 4], ['coralTube', 3], ['coralBrain', 3], ['seaweed', 5], ['shells', 3], ['anchor', 2], ['bannerTeal', 2], ['webSea', 2], ['jellyLamp', 3], ['urnTeal', 2], ['crateWet', 2], ['rubble', 2], ['fernSea', 2], ['columnTeal', 2]],
+  works: [['barrel', 2], ['bones', 1], ['machine', 3], ['crateIron', 3], ['oilDrum', 3], ['gear', 3], ['pipeSteam', 4], ['cables', 3], ['lampPost', 3], ['crateStack', 2], ['rubble', 2], ['brazier', 1]]
+};
 
 /* ============ ПРЕДМЕТЫ: генерация, снаряжение, характеристики ============ */
 const rnd = () => Math.random();
@@ -1782,7 +1871,7 @@ function genChestLoot(depth, bonus = 0) {
 
 /* ============ ГЕНЕРАЦИЯ УРОВНЕЙ: комнаты и коридоры ============ */
 function mkGrid(w, h) { return Array.from({ length: h }, () => Array(w).fill('#')); }
-const isRock = c => c === '#' || c === 'B' || c === 'M';
+const isRock = c => c === '#' || c === 'B' || c === 'M' || c === 'P' || c === 'W' || c === 'V';
 
 function genLevel(idx, seed) {
   for (let a = 0; a < 60; a++) { const L = tryGen(idx, seed + a * 977); if (L) return L; }
@@ -1883,11 +1972,47 @@ function tryGen(idx, seed) {
   if (!sides.length) return null;
   const st = sides[Math.floor(R() * sides.length)]; g[st.y][st.x] = '>';
   const exitFront = { x: st.x + st.ix, y: st.y + st.iy };
+  /* колонны внутри просторных комнат; в зале босса: четыре симметрично */
+  for (const rc of rooms) {
+    if (rc.role === 'vault' || rc.w < 7 || rc.h < 6) continue;
+    if (rc.role === 'boss') {
+      if (rc.w >= 9 && rc.h >= 7) for (const [x, y] of [[rc.x + 2, rc.y + 2], [rc.x + rc.w - 3, rc.y + 2], [rc.x + 2, rc.y + rc.h - 3], [rc.x + rc.w - 3, rc.y + rc.h - 3]]) g[y][x] = 'P';
+      continue;
+    }
+    if (R() > 0.7) continue;
+    const want = Math.min(3, Math.floor(rc.w * rc.h / 26)), placed = [];
+    for (let t = 0; t < 20 && placed.length < want; t++) {
+      const x = rr(rc.x + 2, rc.x + rc.w - 3), y = rr(rc.y + 2, rc.y + rc.h - 3);
+      if (g[y][x] !== '.' || placed.some(q => Math.max(Math.abs(q[0] - x), Math.abs(q[1] - y)) < 3)) continue;
+      if (rc === startRoom && Math.hypot(x - startRoom.cx, y - startRoom.cy) < 2.6) continue;
+      placed.push([x, y]); g[y][x] = 'P';
+    }
+  }
   /* факелы */
   for (const rc of rooms) {
     const cand = ring(rc).filter(c => okWall(c) && g[c.y][c.x] !== '>' && (c.ax ? (c.x > rc.x && c.x < rc.x + rc.w - 1) : (c.y > rc.y && c.y < rc.y + rc.h - 1)));
     const n = rc.role === 'boss' ? 6 : rr(2, 3);
     for (let i = 0; i < n && cand.length; i++) { const c = cand.splice(Math.floor(R() * cand.length), 1)[0]; if (isRock(g[c.y][c.x])) g[c.y][c.x] = 'T'; }
+  }
+  /* узорные участки стен: два мотива на мир */
+  for (const rc of rooms) {
+    if (rc.role === 'boss') continue;
+    const cand = ring(rc).filter(c => okWall(c) && g[c.y][c.x] === '#' && (c.ax ? (c.x > rc.x && c.x < rc.x + rc.w - 1) : (c.y > rc.y && c.y < rc.y + rc.h - 1)));
+    const n = rr(1, 3);
+    for (let i = 0; i < n && cand.length; i++) { const c = cand.splice(Math.floor(R() * cand.length), 1)[0]; if (g[c.y][c.x] === '#') g[c.y][c.x] = R() < 0.5 ? 'W' : 'V'; }
+  }
+  /* пятна на полу: лужи, трава, песок и т. п. (чисто визуальные) */
+  const patch = new Uint8Array(W * H);
+  for (const rc of rooms) {
+    if (rc.role === 'boss' || R() < 0.35) continue;
+    for (let b = 0; b < (R() < 0.35 ? 2 : 1); b++) {
+      const id = R() < 0.55 ? 1 : 2, rx = 1.2 + R() * Math.min(2.6, rc.w / 3), ry = 1.2 + R() * Math.min(2.2, rc.h / 3);
+      const cx = rc.x + 1 + R() * (rc.w - 2), cy = rc.y + 1 + R() * (rc.h - 2);
+      for (let y = rc.y; y < rc.y + rc.h; y++) for (let x = rc.x; x < rc.x + rc.w; x++) {
+        if (g[y][x] !== '.') continue;
+        if (Math.hypot((x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry) + (hash(x, y, idx + 3) - 0.5) * 0.55 < 1) patch[y * W + x] = id;
+      }
+    }
   }
   for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
     if (g[y][x] !== '#') continue;
@@ -1908,7 +2033,7 @@ function tryGen(idx, seed) {
   const biome = spec.biome, local = idx - firstLevelOf(biome);
   const pool = POOLS[biome].filter(p => p[2] <= local);
   const pickEnemy = () => { let t = R() * pool.reduce((s, p) => s + p[1], 0); for (const p of pool) { t -= p[1]; if (t <= 0) return p[0]; } return pool[0][0]; };
-  const addEnemy = (rc, t, extra) => { const c = cellIn(rc); if (c) ents.push(Object.assign({ t, x: c.x, y: c.y, depth: idx, elite: !LEVELS[idx].final && idx >= 1 && !ENEMY[t].boss && R() < 0.05 + 0.012 * idx }, extra)); };
+  const addEnemy = (rc, t, extra) => { const c = cellIn(rc); if (c) ents.push(Object.assign({ t, x: c.x, y: c.y, depth: idx, elite: !LEVELS[idx].final && idx >= 1 && !ENEMY[t].boss && R() < Math.min(0.2, 0.05 + 0.012 * idx) }, extra)); };
   if (idx === 0) { const c = cellIn(startRoom); if (c) ents.push({ t: 'hermit', x: c.x, y: c.y }); }
   if (idx >= 1 && R() < 0.5) { const c = cellIn(startRoom); if (c) ents.push({ t: 'altar', x: c.x, y: c.y }); }
   { const c = cellIn(shopRoom); ents.push({ t: 'merchant', x: c.x, y: c.y, stock: genShop(idx) }); }
@@ -1928,11 +2053,26 @@ function tryGen(idx, seed) {
     ents.push({ t: 'key', x: c.x, y: c.y }); keyCell = c;
     for (let i = 0; i < 2; i++) { const cc = cellIn(vault, 1); if (cc) ents.push({ t: 'chest', x: cc.x, y: cc.y, loot: genChestLoot(idx, 2), vault: true }); }
   }
-  const nCh = 2 + (idx >= 4 ? 1 : 0);
+  const nCh = 2 + (idx >= 4 ? 1 : 0) + (idx >= 10 ? 1 : 0);
   for (let i = 0; i < nCh; i++) { const rc = fights[Math.floor(R() * fights.length)], c = cellIn(rc, 1); if (c) ents.push({ t: 'chest', x: c.x, y: c.y, loot: genChestLoot(idx, 0) }); }
-  const decor = (t, n, rooms2) => { for (let i = 0; i < n; i++) { const rc = rooms2[Math.floor(R() * rooms2.length)], c = cellIn(rc, t === 'barrel' ? 1 : 0); if (c) ents.push({ t, x: c.x, y: c.y }); } };
-  const all = rooms.filter(r => r.role !== 'vault');
-  decor('barrel', rr(3, 6), all); decor('bones', rr(4, 8), all);
+  /* декор окружения по набору мира: в комнатах, плюс мелочь в коридорах */
+  const dset = DECOR_SETS[BIOMES[biome].id];
+  const pickDecor = list => { let t = R() * list.reduce((n, d) => n + d[1], 0); for (const d of list) { t -= d[1]; if (t <= 0) return d[0]; } return list[0][0]; };
+  const solidNear = (cx, cy) => ents.some(e => (SOLID_ENTS[e.t] || (e.t === 'deco' && DECOR[e.k].r)) && Math.abs((e.x | 0) - cx) <= 1 && Math.abs((e.y | 0) - cy) <= 1)
+    || [-1, 0, 1].some(j => [-1, 0, 1].some(i => g[cy + j] && g[cy + j][cx + i] === 'P'));
+  const putDecor = (key, c) => ents.push(key === 'barrel' || key === 'bones' ? { t: key, x: c.x, y: c.y } : { t: 'deco', k: key, x: c.x, y: c.y });
+  const all = rooms.filter(r => r.role !== 'vault'), areas = all.map(r => r.w * r.h), areaSum = areas.reduce((n, a) => n + a, 0);
+  for (let i = 0, n = rr(18, 26); i < n; i++) {
+    const key = pickDecor(dset), dk = DECOR[key];
+    let t = R() * areaSum, rc = all[0]; for (let j = 0; j < all.length; j++) { t -= areas[j]; if (t <= 0) { rc = all[j]; break; } }
+    const c = cellIn(rc, dk.r ? 1 : 0); if (!c) continue;
+    if (dk.r && solidNear(c.x | 0, c.y | 0)) continue;
+    putDecor(key, c);
+  }
+  const inRoom = (x, y) => rooms.some(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h), corr = [];
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (g[y][x] === '.' && !inRoom(x, y) && !used.has(key(x, y))) corr.push([x, y]);
+  const cset = dset.filter(d => DECOR[d[0]].cor);
+  for (let i = 0, n = rr(5, 9); i < n && corr.length && cset.length; i++) { const [x, y] = corr.splice(Math.floor(R() * corr.length), 1)[0]; used.add(key(x, y)); putDecor(pickDecor(cset), { x: x + 0.5, y: y + 0.5 }); }
   for (let i = 0; i < rr(2, 3); i++) { const rc = fights[Math.floor(R() * fights.length)], c = cellIn(rc, 0); if (c) ents.push({ t: R() < 0.6 ? 'potionRed' : 'potionBlue', x: c.x, y: c.y }); }
 
   /* ---------- проверка достижимости ---------- */
@@ -1949,7 +2089,7 @@ function tryGen(idx, seed) {
   const ang = Math.atan2(nb.cy - startRoom.cy, nb.cx - startRoom.cx);
   const spawnC = { x: startRoom.cx + 0.5, y: startRoom.cy + 0.5 };
   return {
-    w: W, h: H, grid: g, ents, start: { x: spawnC.x, y: spawnC.y, a: ang }, special: boss ? { x0: boss.x, y0: boss.y, x1: boss.x + boss.w - 1, y1: boss.y + boss.h - 1 } : null,
+    w: W, h: H, grid: g, patch, ents, start: { x: spawnC.x, y: spawnC.y, a: ang }, special: boss ? { x0: boss.x, y0: boss.y, x1: boss.x + boss.w - 1, y1: boss.y + boss.h - 1 } : null,
     meta: { hasVault: !!vault, bossId: spec.boss || null, final: !!spec.final, rooms: rooms.length, exit: { x: st.x, y: st.y } }
   };
 }
@@ -1996,7 +2136,11 @@ function renderWorld(world, P, sprites, time, bob) {
   const fr = T.fogC[0], fg = T.fogC[1], fb = T.fogC[2];
 
   /* ---- пол и потолок ---- */
-  const floorT = T.floorT, hallT = T.floorS, ceilT = T.ceilT, sp = world.special;
+  const fi = ((time * 3.2) | 0) & 3;
+  const floorT = T.floorF[fi % T.floorF.length], hallT = T.floorS, sp = world.special;
+  const ceilT = T.ceilF ? T.ceilF[fi % T.ceilF.length] : T.ceilT, ceilLit = T.ceilLit;
+  const pm = world.patch, pt1 = T.patchF[0][fi % T.patchF[0].length], pt2 = T.patchF[1][fi % T.patchF[1].length];
+  const skyM = T.ceilMode === 'sky' ? T.sky : null, skyOff = skyM ? ((P.a * RW / (2 * pl)) | 0) : 0;
   const rx0 = dx - px, ry0 = dy - py, rx1 = dx + px, ry1 = dy + py;
   const pMax = Math.max(hz, RH - hz);
   for (let p = 1; p <= pMax; p++) {
@@ -2006,17 +2150,45 @@ function renderWorld(world, P, sprites, time, bob) {
     let fx = P.x + rowD * rx0, fy = P.y + rowD * ry0;
     const stx = rowD * (rx1 - rx0) / RW, sty = rowD * (ry1 - ry0) / RW;
     const rowF = y * RW, rowC = yc * RW;
+    if (doC && skyM) {                       // небо: градиент, облака и звёзды, без тумана
+      const g0 = skyM.grad[Math.min(p, RH + 1)], vr = skyM.vrow[Math.min(p, RH + 1)] * 128, cc = skyM.cloudCol, sk = Math.min(256, (p - skyM.starFrom) * 5);
+      const r0 = g0 & 255, g1 = (g0 >> 8) & 255, b0 = (g0 >> 16) & 255;
+      for (let x = 0; x < RW; x++) {
+        const ci = vr + ((x + skyOff) & 127), cv = skyM.cloud[ci];
+        let r = r0, g = g1, b = b0;
+        if (cv > skyM.thr) { const a = ((cv - skyM.thr) / (255 - skyM.thr) * skyM.cloudA * 256) | 0, ia = 256 - a; r = (r * ia + cc[0] * a) >> 8; g = (g * ia + cc[1] * a) >> 8; b = (b * ia + cc[2] * a) >> 8; }
+        else if (sk > 0) { const st = skyM.stars[ci]; if (st) { const k = (st * sk) >> 8; r = Math.min(255, r + k); g = Math.min(255, g + k); b = Math.min(255, b + k); } }
+        buf[rowC + x] = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+      }
+    }
     for (let x = 0; x < RW; x++, fx += stx, fy += sty) {
       const cx = fx | 0, cy = fy | 0;
       const ti = (((fy - cy) * TS) & (TS - 1)) * TS + (((fx - cx) * TS) & (TS - 1));
       if (doF) {
-        const ft = (sp && cx >= sp.x0 && cx <= sp.x1 && cy >= sp.y0 && cy <= sp.y1) ? hallT : floorT;
+        let ft = floorT;
+        if (sp && cx >= sp.x0 && cx <= sp.x1 && cy >= sp.y0 && cy <= sp.y1) ft = hallT;
+        else if (pm && cx >= 0 && cy >= 0 && cx < W && cy < H) { const pv = pm[cy * W + cx]; if (pv === 1) ft = pt1; else if (pv === 2) ft = pt2; }
         const c = ft[ti];
         buf[rowF + x] = (0xff000000 | ((((c >> 16) & 255) * s + fB) >> 8 << 16) | ((((c >> 8) & 255) * s + fG) >> 8 << 8) | (((c & 255) * s + fR) >> 8)) >>> 0;
       }
-      if (doC) {
-        const c = ceilT[ti], s2 = s >> 1, i2 = 256 - s2;
+      if (doC && !skyM) {
+        const c = ceilT[ti], s2 = ceilLit ? s : s >> 1, i2 = 256 - s2;
         buf[rowC + x] = (0xff000000 | ((((c >> 16) & 255) * s2 + fb * i2) >> 8 << 16) | ((((c >> 8) & 255) * s2 + fg * i2) >> 8 << 8) | (((c & 255) * s2 + fr * i2) >> 8)) >>> 0;
+      }
+    }
+  }
+  /* закатное солнце над стенами */
+  if (skyM && skyM.sun) {
+    const su = skyM.sun, d = angDiff(su.ang, P.a);
+    if (Math.abs(d) < 1.2) {
+      const sx = (RW / 2) * (1 + Math.tan(d) / pl), sy = hz - su.h, R = su.r, Hh = R * 3.6;
+      const xa = Math.max(0, (sx - Hh) | 0), xb = Math.min(RW - 1, (sx + Hh) | 0), ya = Math.max(0, (sy - Hh) | 0), yb = Math.min(hz - 1, (sy + Hh) | 0);
+      for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
+        const dd = Math.hypot(x - sx, y - sy); if (dd > Hh) continue;
+        const i = y * RW + x, c = buf[i]; let r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255;
+        if (dd <= R) { const k = dd / R; r = 255; g = 238 - k * 46; b = 178 - k * 80; }
+        else { const k = 1 - (dd - R) / (Hh - R), a = k * k * 0.7; r += (255 - r) * a; g += (176 - g) * a; b += (96 - b) * a; }
+        buf[i] = (0xff000000 | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0)) >>> 0;
       }
     }
   }
@@ -2063,7 +2235,7 @@ function renderWorld(world, P, sprites, time, bob) {
   for (const s of sprites) {
     const rx = s.x - P.x, ry = s.y - P.y;
     const tx = inv * (dy * rx - dx * ry), ty = inv * (-py * rx + px * ry);
-    if (ty < 0.12 || (s.glow && ty < 0.4)) continue;
+    if (ty < 0.12 || (s.glow && ty < 0.4) || ty < s.near) continue;
     const sp = s.spr, scrX = (RW / 2) * (1 + tx / ty), unit = RH / ty;
     const sh = unit * s.sc, sw = sh * (sp.w / sp.h);
     const bottom = hz + (0.5 - s.z) * unit, top = bottom - sh;
@@ -2213,7 +2385,7 @@ function spawn(d) {
   const e = { t: d.t, x: d.x, y: d.y, loot: d.loot, opened: false, seed: Math.random() * 10, vault: d.vault, stock: d.stock, used: false };
   if (ENEMY[d.t]) {
     const def = ENEMY[d.t], dep = d.depth !== undefined ? d.depth : G.floor, boss = !!def.boss, elite = !!d.elite && !boss;
-    const hm = boss ? 1 : (1 + 0.12 * dep) * (elite ? 2.2 : 1), dm = boss ? 1 : (1 + 0.09 * dep) * (elite ? 1.35 : 1);
+    const hm = boss ? 1 : (1 + 0.12 * dep + 0.004 * dep * dep) * (elite ? 2.2 : 1), dm = boss ? 1 : (1 + 0.09 * dep + 0.0045 * dep * dep) * (elite ? 1.35 : 1);
     const hp = Math.round(def.hp * hm);
     Object.assign(e, {
       kind: 'enemy', def, hp, maxHp: hp, dmgMul: dm, xpMul: boss ? 1 : (1 + 0.12 * dep) * (elite ? 3 : 1), elite, depth: dep,
@@ -2221,20 +2393,16 @@ function spawn(d) {
       stun: 0, slow: 0, freeze: 0, abT: (def.abCd || 0) * 0.8, abI: 0, act: null, charge: null, owner: d.owner || null
     });
   } else if (d.t === 'item') { e.kind = 'item'; e.item = d.item; }
+  else if (d.t === 'deco') { e.kind = 'deco'; e.k = d.k; }
   else if (d.t === 'hermit' || d.t === 'merchant') e.kind = 'npc';
   else if (d.t === 'potionRed' || d.t === 'potionBlue' || d.t === 'key' || d.t === 'gold') { e.kind = 'pickup'; e.val = d.val || 0; }
   else e.kind = 'obj';
   return e;
 }
 function loadFloor(i) {
-  if (i === undefined || i === null || i < 0 || i >= LEVELS.length) return;
-  const spec = LEVELS[i];
-  if (!spec) return;
-  const B = BIOMES[spec.biome];
-  if (!B) return;
-  const L = genLevel(i, (G.seed ?? 0) + i * 131);
+  const spec = LEVELS[i], B = BIOMES[spec.biome], L = genLevel(i, G.seed + i * 131);
   G.floor = i;
-  G.world = { grid: L.grid, w: L.w, h: L.h, special: L.special, tex: biomeTex(spec.biome), name: B.name, biome: spec.biome, meta: L.meta, start: L.start };
+  G.world = { grid: L.grid, w: L.w, h: L.h, patch: L.patch, special: L.special, tex: biomeTex(spec.biome), name: B.name, biome: spec.biome, meta: L.meta };
   G.ents = L.ents.map(spawn);
   G.seen = Array.from({ length: L.h }, () => Array(L.w).fill(false));
   G.proj = []; G.fx = []; G.bolts = []; G.nums = []; G.boss = null; G.shopEnt = null;
@@ -2252,7 +2420,7 @@ function entBlock(x, y, r, self) {
   for (const e of G.ents) {
     if (e === self) continue;
     let er = 0;
-    if (e.kind === 'enemy') { if (e.dead) continue; er = e.def.r; } else if (SOLID_ENTS[e.t]) er = SOLID_ENTS[e.t]; else continue;
+    if (e.kind === 'enemy') { if (e.dead) continue; er = e.def.r; } else if (SOLID_ENTS[e.t]) er = SOLID_ENTS[e.t]; else if (e.kind === 'deco' && DECOR[e.k].r) er = DECOR[e.k].r; else continue;
     if (Math.hypot(e.x - x, e.y - y) < r + er) return true;
   }
   if (self !== P && Math.hypot(P.x - x, P.y - y) < r + 0.22) return true;
@@ -2349,10 +2517,10 @@ function giveItem(it, silent) {
 }
 
 /* ---------- сохранение ---------- */
-const SAVE_KEY = 'pixel-catacombs-v3';
+const SAVE_KEY = 'pixel-catacombs-v3', OLD_FLOORS = [0, 1, 4, 5, 8, 9, 12, 13, 16];
 function saveGame() {
   try {
-    const s = { v: 3, seed: G.seed, floor: G.floor, kills: G.kills, time: G.time, talked: G.talked,
+    const s = { v: 4, seed: G.seed, floor: G.floor, kills: G.kills, time: G.time, talked: G.talked,
       P: { lv: P.lv, xp: P.xp, hp: P.hp, mp: P.mp, gold: P.gold, heal: P.heal, mana: P.mana, sp: P.sp, spell: P.spell, spells: P.spells, gear: P.gear, bag: P.bag } };
     localStorage.setItem(SAVE_KEY, JSON.stringify(s));
   } catch (e) { }
@@ -2360,7 +2528,9 @@ function saveGame() {
 function readSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-    if (!s || s.v !== 3 || !s.P || !(s.floor >= 0 && s.floor < LEVELS.length)) return null;
+    if (!s || (s.v !== 3 && s.v !== 4) || !s.P) return null;
+    if (s.v === 3) { s.floor = OLD_FLOORS[s.floor]; s.v = 4; }   // старые сохранения: девять этажей переехали в новую нумерацию
+    if (!(s.floor >= 0 && s.floor < LEVELS.length)) return null;
     return s;
   } catch (e) { return null; }
 }
@@ -2398,7 +2568,7 @@ function interactTarget() {
     const c = { cx: x | 0, cy: y | 0, ch };
     if (ch === 'D') return { type: 'door', c, label: 'Открыть дверь' };
     if (ch === 'L') return { type: 'door', c, label: F.key ? 'Отпереть багровую дверь' : 'Запертая дверь' };
-    if (ch === '>') return { type: 'stairs', c, label: (LEVELS[G.floor].boss && !F.bossDead) ? 'Выход запечатан' : 'Спуститься вниз' };
+    if (ch === '>') return LEVELS[G.floor + 1] ? { type: 'stairs', c, label: (LEVELS[G.floor].boss && !F.bossDead) ? 'Выход запечатан' : 'Спуститься вниз' } : null;
     return null;
   }
   return null;
@@ -2416,7 +2586,7 @@ function doInteract() {
     else if (F.key) { G.world.grid[cy][cx] = '.'; F.key = false; sfx('door'); msg('Багровый замок рассыпался. Сокровищница открыта!', 'good'); }
     else { sfx('locked'); msg('Дверь заперта багровым замком. Где-то на этаже лежит ключ.', 'bad'); }
   } else if (t.type === 'stairs') {
-    const spec = LEVELS[G.floor];
+    const spec = LEVELS[G.floor]; if (!LEVELS[G.floor + 1]) return;
     if (spec.boss && !F.bossDead) { sfx('locked'); msg('Печать держит выход, пока жив ' + ENEMY[spec.boss].name + '.', 'bad'); return; }
     sfx('stairs'); loadFloor(G.floor + 1); toast(floorTitle(), 2600); G.flashWhite = 0.5; saveGame();
     msg('Новый этаж: ' + BIOMES[G.world.biome].name + '.', 'gold');
@@ -2474,7 +2644,7 @@ function talkHermit() {
     G.talked = true;
     openDialog('Старец', [
       'Очнулся, путник? Ты у входа в Катакомбы Пикселя. Глубоко внизу, в Зале Лича, спит Король-Лич.',
-      'Путь вниз лежит через пять миров: катакомбы, грибной грот, огненные недра и ледяные чертоги. В конце каждого мира стережёт свой хозяин.',
+      'Путь вниз лежит через девять миров: катакомбы, шепчущую чащу, грибной грот, песчаные гробницы, огненные недра, затонувший храм, ледяные чертоги и заводской цех. В конце каждого мира стережёт свой хозяин.',
       'Не пренебрегай сундуками: оружие и броня делают героя. Лавки торговцев встретишь на каждом этаже. Магия растёт с уровнем: открой меню (Tab, I или кнопка в углу) и выбери заклинания.'
     ], [{ t: 'Выпить отвар и идти', fn: () => { P.hp = P.maxHp; P.mp = P.maxMp; P.heal++; G.flashGreen = 0.5; sfx('heal'); msg('Старец вручил зелье лечения.', 'good'); closeDialog(); } }]);
   } else {
@@ -2494,7 +2664,7 @@ function resolveSwing() {
   for (const e of G.ents) {
     if (e.dead) continue;
     const isE = e.kind === 'enemy';
-    if (!isE && e.t !== 'barrel') continue;
+    if (!isE && e.t !== 'barrel' && !(e.kind === 'deco' && DECOR[e.k].brk)) continue;
     const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy), rr = isE ? e.def.r : 0.3;
     if (d - rr > w.reach) continue;
     if (d > 0.7 && Math.abs(angDiff(Math.atan2(dy, dx), P.a)) > w.arc) continue;
@@ -2505,9 +2675,9 @@ function resolveSwing() {
   cand.sort((a, b) => a.d - b.d);
   const list = w.cleave ? cand : [cand[0]];
   for (const { e } of list) {
-    if (e.kind === 'obj') {
-      G.ents.splice(G.ents.indexOf(e), 1); sfx('hit'); msg('Бочка разбита');
-      if (Math.random() < 0.5) G.ents.push(spawn({ t: 'gold', x: e.x, y: e.y, val: rint(2, 6) + G.floor * 2 }));
+    if (e.kind === 'obj' || e.kind === 'deco') {
+      G.ents.splice(G.ents.indexOf(e), 1); sfx('hit'); msg(e.kind === 'deco' ? DECOR[e.k].brk : 'Бочка разбита');
+      if (Math.random() < (e.kind === 'deco' ? 0.4 : 0.5)) G.ents.push(spawn({ t: 'gold', x: e.x, y: e.y, val: rint(2, 6) + G.floor * 2 }));
       continue;
     }
     const crit = Math.random() < P.crit;
@@ -2864,7 +3034,7 @@ function updateWorld(dt, inp) {
 function buildSprites(t) {
   const list = [], sq = (x, y) => (x - P.x) * (x - P.x) + (y - P.y) * (y - P.y);
   for (const e of G.ents) {
-    let spr, sc, z, flash = 0, tint = null;
+    let spr, sc, z, flash = 0, tint = null, glow = false;
     if (e.kind === 'enemy') {
       const d = e.def;
       spr = SPR[d.spr]; sc = d.sc * (e.elite ? 1.12 : 1) * (e.wind > 0 ? 1.08 : 1); flash = e.flash;
@@ -2873,6 +3043,9 @@ function buildSprites(t) {
       else if (e.act || e.charge) tint = Math.sin(t * 30) > 0 ? [390, 130, 130] : [310, 190, 190];
       else if (e.slow > 0) tint = [170, 220, 330];
       else if (e.elite) tint = [330, 290, 150];
+    } else if (e.kind === 'deco') {
+      const dk = DECOR[e.k]; spr = SPR[dk.spr]; sc = dk.sc; z = dk.z; glow = !!dk.glow;
+      if (glow && !dk.hang) sc *= 1 + 0.035 * Math.sin(t * 9 + e.seed * 3);
     } else if (e.kind === 'item') {
       spr = itemWorldSprite(e.item); sc = 0.34; z = 0.06 + Math.sin(t * 3 + e.seed) * 0.03;
       if (e.item.rarity > 0) list.push({ x: e.x, y: e.y, spr: SPARK[e.item.rarity], sc: 0.16 + 0.03 * Math.sin(t * 5 + e.seed), z: 0.3 + Math.sin(t * 3 + e.seed) * 0.03, glow: true, d: sq(e.x, e.y) - 0.01 });
@@ -2881,35 +3054,8 @@ function buildSprites(t) {
       sc = lk.sc; z = lk.z + (e.kind === 'pickup' ? Math.sin(t * 3 + e.seed) * 0.03 : 0);
       if (e.t === 'chest' && e.vault && !e.opened) tint = [330, 280, 160];
     }
-    list.push({ x: e.x, y: e.y, spr, sc, z, flash, tint, d: sq(e.x, e.y) });
+    list.push({ x: e.x, y: e.y, spr, sc, z, flash, tint, glow, near: e.kind === 'deco' ? 0.5 : 0, d: sq(e.x, e.y) });
   }
-
-  // Render second player (peer)
-  if (MP.connected && MP.peer && !MP.peer.dead) {
-    const peer = MP.peer;
-    const d = Math.hypot(peer.x - P.x, peer.y - P.y);
-    if (d < 30) { // Only render if within reasonable distance
-      // Use a hero-like sprite for the peer
-      let spr = SPR.skeleton; // Base sprite, will be tinted
-      let sc = 0.95;
-      let z = 0;
-      let flash = peer.anim.hurt > 0 ? 0.18 : 0;
-      let tint = [100, 200, 255]; // Blue tint for peer player
-
-      // Weapon bob when swinging
-      if (peer.anim.swing > 0) {
-        sc *= 1.1;
-      }
-
-      // Cast effect
-      if (peer.anim.cast > 0) {
-        tint = [255, 200, 100];
-      }
-
-      list.push({ x: peer.x, y: peer.y, spr, sc, z, flash, tint, d: sq(peer.x, peer.y), isPeer: true });
-    }
-  }
-
   for (const p of G.proj) {
     const sp = p.friendly ? (p.kind === 'frost' ? SPR.iceBolt : SPR.fireball) : SPR[p.spr] || SPR.orb;
     list.push({ x: p.x, y: p.y, spr: sp, sc: 0.4, z: 0.3, glow: true, d: sq(p.x, p.y) });
@@ -2995,19 +3141,42 @@ function drawMinimap() {
     else if (e.t === 'altar' && !e.used) rect('#3ad8b0', mx(e) - 1, my(e) - 1, 2, 2);
     else if (e.kind === 'item') rect(RAR_COL[e.item.rarity], mx(e) - 1, my(e) - 1, 2, 2);
   }
-  // Draw peer player on minimap
-  if (MP.connected && MP.peer && !MP.peer.dead) {
-    const peer = MP.peer;
-    if (inside(peer) && G.seen[peer.y | 0]?.[peer.x | 0]) {
-      rect('#4aa0ff', mx(peer) - 1, my(peer) - 1, 3, 3);
-      rect('#ffffff', mx(peer) + Math.cos(peer.a) * 4, my(peer) + Math.sin(peer.a) * 4, 1, 1);
-    }
-  }
   const cx = mx(P), cy = my(P);
   rect('#ffffff', cx - 1, cy - 1, 3, 3);
   rect('#ffffff', cx + Math.cos(P.a) * 4, cy + Math.sin(P.a) * 4, 1, 1);
 }
+/* частицы воздуха: у каждого мира свои (пыль, споры, угли, снег, светлячки, песок, пузыри, искры) */
+const AMB = {
+  crypt:  { n: 22, cols: ['#8a82a8', '#b0a8cc'], sz: [1, 1], vx: [-2, 2], vy: [1, 5], a: 0.5 },
+  cave:   { n: 26, cols: ['#7af0c8', '#b8ffe8'], sz: [1, 2], vx: [-3, 3], vy: [-4, 2], a: 0.85, pulse: 1, halo: 1 },
+  fire:   { n: 32, cols: ['#ff9a3a', '#ffd060', '#ff5a20'], sz: [1, 2], vx: [-5, 5], vy: [-30, -10], a: 0.9 },
+  ice:    { n: 44, cols: ['#ffffff', '#d8f0ff'], sz: [1, 2], vx: [-6, 2], vy: [8, 18], a: 0.85 },
+  throne: { n: 26, cols: ['#c898ff', '#9a52d8', '#ffffff'], sz: [1, 2], vx: [-3, 3], vy: [-10, -3], a: 0.85, pulse: 1, halo: 1 },
+  forest: { n: 24, cols: ['#fff0a0', '#d8ff80'], sz: [2, 2], vx: [-6, 6], vy: [-5, 5], a: 1, pulse: 1, halo: 1 },
+  desert: { n: 40, cols: ['#f6dca0', '#e8c080', '#fff0c8'], sz: [1, 1], vx: [26, 52], vy: [-2, 4], a: 0.6, streak: 4 },
+  sunken: { n: 30, cols: ['#d8f8ff', '#a8e8f8'], sz: [1, 3], vx: [-3, 3], vy: [-30, -12], a: 0.75, bubble: 1 },
+  works:  { n: 28, cols: ['#ffb040', '#ffe080', '#ff7020'], sz: [1, 1], vx: [-16, 16], vy: [-34, -8], a: 0.95 }
+};
+function drawAmbient() {
+  const cfg = AMB[BIOMES[G.world.biome].id]; if (!cfg) return;
+  if (!G.amb || G.amb.world !== G.world) {
+    const R = rng(7), U = (a, b) => a + R() * (b - a);
+    G.amb = { world: G.world, t: G.time, a: P.a, list: Array.from({ length: cfg.n }, () => ({ x: U(0, RW), y: U(0, RH), vx: U(cfg.vx[0], cfg.vx[1]), vy: U(cfg.vy[0], cfg.vy[1]), ph: U(0, 6.28), sz: Math.round(U(cfg.sz[0], cfg.sz[1])), col: cfg.cols[(R() * cfg.cols.length) | 0] })) };
+  }
+  const A = G.amb, dt = clamp(G.time - A.t, 0, 0.1), shift = -angDiff(P.a, A.a) * RW / 1.4 * 0.7; A.t = G.time; A.a = P.a;
+  for (const p of A.list) {
+    p.x += p.vx * dt + shift; p.y += p.vy * dt + (cfg.pulse ? Math.sin(G.time * 1.3 + p.ph) * 4 * dt : 0);
+    if (p.x < -6) p.x += RW + 12; else if (p.x > RW + 6) p.x -= RW + 12;
+    if (p.y < -6) p.y += RH + 12; else if (p.y > RH + 6) p.y -= RH + 12;
+    const al = cfg.a * (cfg.pulse ? 0.4 + 0.6 * Math.pow(Math.sin(G.time * 2.4 + p.ph), 2) : 1);
+    if (cfg.halo) rect(p.col, p.x - 1, p.y - 1, p.sz + 2, p.sz + 2, al * 0.22);
+    if (cfg.streak) rect(p.col, p.x, p.y, cfg.streak, 1, al);
+    else if (cfg.bubble && p.sz > 1) { rect(p.col, p.x, p.y, p.sz, p.sz, al * 0.45); rect('#ffffff', p.x, p.y, 1, 1, al); }
+    else rect(p.col, p.x, p.y, p.sz, p.sz, al);
+  }
+}
 function drawOverlays() {
+  drawAmbient();
   if (G.hurt > 0) { rect('#c82828', 0, 0, RW, RH, Math.min(0.5, G.hurt * 1.3)); rect('#c82828', 0, 0, RW, 8, 0.5); rect('#c82828', 0, RH - 8, RW, 8, 0.5); }
   if (P.poison > 0) { const a = 0.1 + 0.05 * Math.sin(G.time * 6); rect('#3ad83a', 0, 0, RW, RH, a); rect('#3ad83a', 0, 0, RW, 6, 0.25); rect('#3ad83a', 0, RH - 6, RW, 6, 0.25); }
   if (P.slowT > 0) { rect('#6ab8f0', 0, 0, RW, RH, 0.1); }
@@ -3205,7 +3374,7 @@ function menuOk() {
 }
 
 /* ============ ИНТЕРФЕЙС, РЕЖИМЫ И ГЛАВНЫЙ ЦИКЛ ============ */
-const OVERLAYS = ['ovTitle', 'ovPause', 'ovDead', 'ovWin', 'ovMultiplayer'];
+const OVERLAYS = ['ovTitle', 'ovPause', 'ovDead', 'ovWin'];
 function showOverlay(id) { OVERLAYS.forEach(o => { $(o).hidden = o !== id; }); const b = $(id).querySelector('button.primary'); if (b) setTimeout(() => { try { b.focus({ preventScroll: true }); } catch (e) { } }, 30); }
 function hideOverlays() { OVERLAYS.forEach(o => { $(o).hidden = true; }); }
 function beginPlay() {
@@ -3215,27 +3384,6 @@ function beginPlay() {
 function startGame() {
   unlockAudio(); newGame(); beginPlay();
   msg('Подойди к старцу и нажми «Действие» (E / A / кнопка с ключом).', 'gold');
-
-  // In multiplayer, notify peer to start
-  if (MP.connected && MP.peerId === 1) {
-    mpSend({ type: 'game-start', data: { floor: G.floor, seed: G.seed } });
-    // Initialize peer player at start position
-    const startingWeapon = genItem(0, { slot: 'weapon', type: 'sword', rarity: 0 });
-    MP.peer = {
-      x: P.x, y: P.y, a: P.a,
-      hp: P.maxHp, maxHp: P.maxHp, mp: P.maxMp, maxMp: P.maxMp,
-      lv: 1, xp: 0, gold: 0, heal: 2, mana: 1,
-      spell: 'fire', sp: 1, spells: {fire:1, frost:0, bolt:0, heal:0},
-      gear: emptyGear(), bag: [],
-      name: 'Игрок 2',
-      weapon: startingWeapon,
-      anim: { swing: 0, cast: 0, hurt: 0 },
-      dead: false,
-      slowT: 0,
-      poison: 0
-    };
-    MP.peer.gear.weapon = startingWeapon;
-  }
 }
 function continueGame() {
   unlockAudio(); if (!loadGame()) { startGame(); return; }
@@ -3258,15 +3406,9 @@ function act(a) {
   switch (G.mode) {
     case 'title': if (a === 'ok' || a === 'use') (readSave() ? continueGame : startGame)(); break;
     case 'play':
-      if (a === 'attack') { playerAttack(); mpSendAction('attack'); }
-      else if (a === 'fire') { castSpell(); mpSendAction('fire'); }
-      else if (a === 'use' || a === 'ok') { doInteract(); mpSendAction('use'); }
-      else if (a === 'heal') { useHeal(); mpSendAction('heal'); }
-      else if (a === 'mana') { useMana(); mpSendAction('mana'); }
-      else if (a === 'pause' || a === 'back') pauseGame();
-      else if (a === 'menu') openMenu('inv');
-      else if (a === 'spellNext') cycleSpell(1);
-      else if (a === 'spellPrev') cycleSpell(-1);
+      if (a === 'attack') playerAttack(); else if (a === 'fire') castSpell(); else if (a === 'use' || a === 'ok') doInteract();
+      else if (a === 'heal') useHeal(); else if (a === 'mana') useMana(); else if (a === 'pause' || a === 'back') pauseGame();
+      else if (a === 'menu') openMenu('inv'); else if (a === 'spellNext') cycleSpell(1); else if (a === 'spellPrev') cycleSpell(-1);
       else if (a.startsWith('sp') && a.length === 3) { const s = SPELLS[+a[2] - 1]; if (s) { if (spellLv(s.id)) { selectSpell(s.id); toast(s.name + ' ' + spellLv(s.id) + ' ур.', 1100); } else { sfx('nope'); msg('«' + s.name + '» не изучено', 'bad'); } } }
       break;
     case 'menu':
@@ -3331,256 +3473,27 @@ function placeMinimap() {
 }
 
 /* ---------- главный цикл ---------- */
-let lastT = performance.now(), mmT = 0, mpSyncT = 0, mpPeerStateT = 0;
+let lastT = performance.now(), mmT = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
   let inp = { fwd: 0, strafe: 0, turn: 0, look: 0 };
   try { inp = readInput(dt); } catch (e) { console.error(e); }
-  if (G.mode === 'play') {
-    updateWorld(dt, inp);
-
-    // Multiplayer sync
-    if (MP.connected) {
-      mpSyncT -= dt;
-      mpPeerStateT -= dt;
-
-      // Host sends authoritative state (world + host player) to peer
-      if (MP.peerId === 1 && mpSyncT <= 0) {
-        mpSyncT = 0.05; // 20 updates/sec
-        mpSendPlayerUpdate();
-      }
-
-      // Peer sends their player state to host
-      if (MP.peerId === 2 && mpPeerStateT <= 0) {
-        mpPeerStateT = 0.05; // 20 updates/sec
-        mpSendPeerState();
-      }
-
-      // Send local position to peer every frame (authoritative)
-      if (MP.peerId === 2) {
-        mpSendPeerState();
-      }
-    }
-  } else {
+  if (G.mode === 'play') updateWorld(dt, inp);
+  else {
     G.time += dt; if (G.mode === 'title') P.a += dt * 0.22;
     G.hurt = Math.max(0, G.hurt - dt); G.flashGreen = Math.max(0, G.flashGreen - dt); G.flashGold = Math.max(0, G.flashGold - dt); G.flashWhite = Math.max(0, G.flashWhite - dt); G.bob = 0;
     if (G.mode === 'title' || G.mode === 'dialog' || G.mode === 'menu') updateProjectiles(dt);
   }
-
-  // Update peer animation
-  if (MP.connected) {
-    MP.peer.anim.swing = Math.max(0, MP.peer.anim.swing - dt);
-    MP.peer.anim.cast = Math.max(0, MP.peer.anim.cast - dt);
-    MP.peer.anim.hurt = Math.max(0, MP.peer.anim.hurt - dt);
-  }
-
   renderWorld(G.world, P, buildSprites(G.time), G.time, G.mode === 'play' ? G.bob : 0);
   drawOverlays(); updateHud();
   if ((mmT -= dt) < 0) { mmT = 0.5; placeMinimap(); }
   requestAnimationFrame(frame);
 }
-
-function mpSendPeerState() {
-  if (!MP.connected || MP.peerId !== 2) return;
-
-  const weapon = P.gear.weapon;
-  const state = {
-    x: P.x, y: P.y, a: P.a,
-    hp: P.hp, maxHp: P.maxHp, mp: P.mp, maxMp: P.maxMp,
-    lv: P.lv, xp: P.xp, gold: P.gold, heal: P.heal, mana: P.mana,
-    spell: P.spell, sp: P.sp, spells: {...P.spells},
-    anim: { swing: G.swing, cast: G.cast, hurt: G.hurt },
-    dead: P.hp <= 0,
-    atk: P.atk, def: P.def, mag: P.mag, crit: P.crit, life: P.life, spdMul: P.spdMul,
-    slowT: P.slowT, poison: P.poison,
-    weapon: weapon ? { type: weapon.type, dmg: weapon.dmg, name: weapon.name, style: WTYPES[weapon.type]?.style, reach: WTYPES[weapon.type]?.reach, arc: WTYPES[weapon.type]?.arc, cleave: WTYPES[weapon.type]?.cleave, stun: WTYPES[weapon.type]?.stun, cd: WTYPES[weapon.type]?.cd } : null
-  };
-  mpSend({ type: 'peer-state', data: state });
-}
-
-function mpSendAction(action) {
-  if (!MP.connected) return;
-  mpSend({ type: 'peer-action', data: { action, spell: P.spell, x: P.x, y: P.y, a: P.a } });
-}
-
-function mpHandlePeerAction(data) {
-  // Host processes peer's action
-  if (MP.peerId !== 1) return;
-
-  const peer = MP.peer;
-  if (peer.dead) return;
-
-  switch (data.action) {
-    case 'attack':
-      // Trigger peer attack animation
-      peer.anim.swing = G.swingDur || 0.36;
-      // Host processes the attack for peer
-      mpProcessPeerAttack(peer, data);
-      break;
-    case 'fire':
-      peer.anim.cast = 0.32;
-      mpProcessPeerSpell(peer, data);
-      break;
-    case 'heal':
-      if (peer.heal > 0 && (peer.hp < peer.maxHp || peer.poison > 0)) {
-        peer.heal--;
-        const v = Math.max(25, Math.round(peer.maxHp * 0.4));
-        peer.hp = Math.min(peer.maxHp, peer.hp + v);
-        peer.poison = 0;
-      }
-      break;
-    case 'mana':
-      if (peer.mana > 0 && peer.mp < peer.maxMp) {
-        peer.mana--;
-        const v = Math.max(10, Math.round(peer.maxMp * 0.5));
-        peer.mp = Math.min(peer.maxMp, peer.mp + v);
-      }
-      break;
-    case 'use':
-      // Interact - host handles doors, chests, etc. for peer
-      mpProcessPeerInteract(peer, data);
-      break;
-  }
-}
-
-function mpProcessPeerAttack(peer, data) {
-  // Similar to playerAttack but for peer
-  const w = peer.weapon || FISTS;
-  const cx = Math.cos(data.a), cy = Math.sin(data.a);
-  const cand = [];
-  for (const e of G.ents) {
-    if (e.dead || e.kind !== 'enemy') continue;
-    const dx = e.x - data.x, dy = e.y - data.y, d = Math.hypot(dx, dy), rr = e.def.r;
-    if (d - rr > w.reach) continue;
-    if (d > 0.7 && Math.abs(angDiff(Math.atan2(dy, dx), data.a)) > w.arc) continue;
-    if (!los(data.x, data.y, e.x, e.y)) continue;
-    cand.push({ e, d });
-  }
-  if (!cand.length) return;
-  cand.sort((a, b) => a.d - b.d);
-  const list = w.cleave ? cand : [cand[0]];
-  for (const { e } of list) {
-    const crit = Math.random() < peer.crit;
-    let dmg = peer.atk + rint(w.dmg[0], w.dmg[1]);
-    if (crit) dmg = Math.round(dmg * 1.8);
-    dmg = Math.max(1, dmg - (e.def.armor || 0));
-    damageEnemy(e, dmg, crit);
-    if (peer.life > 0 && dmg > 0) {
-      const h = Math.max(1, Math.round(dmg * peer.life));
-      if (peer.hp < peer.maxHp) peer.hp = Math.min(peer.maxHp, peer.hp + h);
-    }
-    if (e.dead) continue;
-    const kb = (w.style === 'smash' ? 0.55 : 0.3) * (e.def.boss ? 0.2 : 1);
-    if (kb > 0.05) moveEnt(e, cx * kb, cy * kb, e.def.r);
-    if (w.stun && Math.random() < w.stun * (e.def.boss ? 0.4 : 1)) {
-      e.stun = e.def.boss ? 0.5 : 1.0;
-      e.wind = 0;
-    }
-  }
-  if (w.style === 'smash') G.shake = Math.max(G.shake, 0.25);
-}
-
-function mpProcessPeerSpell(peer, data) {
-  const sp = SPELL_BY_ID[data.spell] || SPELLS[0];
-  const L = peer.spells[data.spell] || 0;
-  if (!L) return;
-  const cost = sp.cost(L);
-  if (peer.mp < cost) return;
-  peer.mp -= cost;
-
-  if (sp.id === 'heal') {
-    const h = sp.amount(L, peer.mag);
-    peer.hp = Math.min(peer.maxHp, peer.hp + h);
-    if (L >= 2) peer.poison = 0;
-  } else if (sp.id === 'fire') {
-    const cx = Math.cos(data.a), cy = Math.sin(data.a);
-    G.proj.push({ x: data.x + cx * 0.4, y: data.y + cy * 0.4, dx: cx, dy: cy, spd: 8,
-      dmg: sp.dmg(L, peer.mag) + rint(0, 3), radius: sp.radius(L), friendly: true, kind: 'fire', life: 2.5 });
-    sfx('fire');
-  } else if (sp.id === 'frost') {
-    const cx = Math.cos(data.a), cy = Math.sin(data.a);
-    G.proj.push({ x: data.x + cx * 0.4, y: data.y + cy * 0.4, dx: cx, dy: cy, spd: 11,
-      dmg: sp.dmg(L, peer.mag) + rint(0, 2), slow: sp.slow(L), pierce: L >= 3, freeze: L >= 5 ? 0.25 : 0,
-      friendly: true, kind: 'frost', life: 2, hit: new Set() });
-    sfx('frost');
-  } else if (sp.id === 'bolt') {
-    // Find target
-    let best = null, bs = 99;
-    for (const e of G.ents) {
-      if (e.kind !== 'enemy' || e.dead) continue;
-      const dx = e.x - data.x, dy = e.y - data.y, d = Math.hypot(dx, dy);
-      if (d > 10) continue;
-      const ad = Math.abs(angDiff(Math.atan2(dy, dx), data.a));
-      if (ad > 0.12 + 0.25 + 0.5 / d) continue;
-      if (!los(data.x, data.y, e.x, e.y)) continue;
-      if (d < bs) { bs = d; best = e; }
-    }
-    if (!best) return;
-    const n = sp.targets(L), list = [best], base = sp.dmg(L, peer.mag);
-    while (list.length < n) {
-      const last = list[list.length - 1];
-      let best2 = null, bd = 3.6;
-      for (const e of G.ents) {
-        if (e.kind !== 'enemy' || e.dead || list.includes(e)) continue;
-        const d = Math.hypot(e.x - last.x, e.y - last.y);
-        if (d < bd && los(last.x, last.y, e.x, e.y)) { bd = d; best2 = e; }
-      }
-      if (!best2) break; list.push(best2);
-    }
-    const pts = [{ x: data.x + Math.cos(data.a) * 0.3, y: data.y + Math.sin(data.a) * 0.3, z: 0.32 }];
-    list.forEach(e => pts.push({ x: e.x, y: e.y, z: 0.35 * e.def.sc + 0.2 }));
-    G.bolts.push({ pts, t: 0, dur: 0.3, seed: Math.random() * 100 });
-    sfx('bolt');
-    list.forEach((e, i) => { const dmg = Math.round(base * Math.pow(0.85, i)); damageEnemy(e, dmg, false, 'bolt'); });
-  }
-}
-
-function mpProcessPeerInteract(peer, data) {
-  // Check for interactable near peer
-  const fa = data.a;
-  for (const e of G.ents) {
-    if (!(e.kind === 'npc' || (e.t === 'chest' && !e.opened) || (e.t === 'altar' && !e.used))) continue;
-    const dx = e.x - data.x, dy = e.y - data.y, d = Math.hypot(dx, dy);
-    if (d > 1.9) continue;
-    if (d > 1.0 && Math.abs(angDiff(Math.atan2(dy, dx), fa)) > 0.8) continue;
-    if (e.t === 'chest') {
-      openChest(e);
-      mpSendEntityUpdate(e);
-    } else if (e.t === 'altar') {
-      e.used = true;
-      peer.hp = peer.maxHp;
-      peer.mp = peer.maxMp;
-      peer.poison = 0;
-      peer.slowT = 0;
-      mpSendEntityUpdate(e);
-    } else if (e.kind === 'npc') {
-      // NPC interaction - just trigger dialog on peer side
-      // Host doesn't process NPC dialogs
-    }
-    return;
-  }
-  // Check doors/stairs
-  for (let s = 0.3; s <= 1.3; s += 0.1) {
-    const x = data.x + Math.cos(fa) * s, y = data.y + Math.sin(fa) * s, ch = cellAt(x, y);
-    if (ch === '.') continue;
-    if (ch === 'D') { G.world.grid[y | 0][x | 0] = '.'; sfx('door'); mpSend({ type: 'entity', data: { t: 'door', x: x | 0, y: y | 0, opened: true } }); return; }
-    if (ch === 'L') { if (!F.key) { sfx('locked'); return; } G.world.grid[y | 0][x | 0] = '.'; F.key = false; sfx('door'); mpSend({ type: 'entity', data: { t: 'door', x: x | 0, y: y | 0, opened: true } }); return; }
-    if (ch === '>') {
-      const spec = LEVELS[G.floor];
-      if (spec.boss && !F.bossDead) return;
-      sfx('stairs');
-      loadFloor(G.floor + 1);
-      mpSendFloorChange();
-      return;
-    }
-    return;
-  }
-}
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play') pauseGame(); });
 
 /* ============ УПРАВЛЕНИЕ: клавиатура, мышь, геймпад, сенсор ============ */
 const keys = new Set();
-let held = { atkTouch: false, fireTouch: false };
+const held = { atkTouch: false, fireTouch: false };
 const joy = { x: 0, y: 0 };
 let lookAcc = 0, touchPref = 'auto', sawTouch = false;
 const setDevice = d => { if (G.device !== d) { G.device = d; document.body.dataset.device = d; } };
@@ -3608,21 +3521,99 @@ addEventListener('keydown', e => {
   else if (c === 'ArrowDown' || c === 'KeyS') act('down');
   else if (c === 'ArrowLeft' || c === 'KeyA') act('left');
   else if (c === 'ArrowRight' || c === 'KeyD') act('right');
+  syncLock();
 });
 addEventListener('keyup', e => { keys.delete(e.code); if (G.mode === 'menu' && (e.code === 'Space' || e.code === 'Enter')) e.preventDefault(); });
-addEventListener('blur', () => { keys.clear(); held.atkTouch = held.fireTouch = false; });
+addEventListener('blur', () => { keys.clear(); held.atkTouch = held.fireTouch = false; mouse.atk = mouse.fire = false; mouse.nx = 0; });
 
-/* ---- мышь и свайп по экрану: поворот; короткое касание: удар ---- */
+/* ---- мышь ----
+   Полный экран: курсор захватывается (Pointer Lock) и обзор следует за мышью, как в шутерах.
+   ЛКМ: удар, ПКМ: заклинание, колесо: смена заклинания, Esc отпускает курсор и ставит паузу.
+   Если браузер не даёт захватить курсор (страница во фрейме без разрешения), работает запасной режим:
+   после клика по экрану вид плавно поворачивается в сторону курсора у левого и правого краёв.
+   Вне полного экрана и на сенсоре: перетаскивание/свайп поворачивает, короткое касание бьёт. */
 const scr = $('screen'); let drag = null;
+const MSENS = [0.4, 0.7, 1, 1.5, 2.2], MRAD = 0.0022, MKEY = 'pixel-catacombs-mouse';
+const mouse = {
+  type: matchMedia('(pointer: fine)').matches ? 'mouse' : '', sens: 2,
+  soft: false, pending: false, failed: false, blocked: false, exiting: false, wasLocked: false,
+  lastReq: -1e9, ignoreUntil: 0, nx: 0, overBtn: false, atk: false, fire: false, idle: 0, hinted: false, told: false
+};
+try { const v = localStorage.getItem(MKEY); if (v !== null && +v >= 0 && +v < MSENS.length) mouse.sens = +v | 0; } catch (e) { }
+const isLocked = () => document.pointerLockElement === scr;
+const lookWanted = () => G.mode === 'play' && document.body.classList.contains('full') && mouse.type === 'mouse';
+/* захват и освобождение курсора по текущему режиму; запрос идёт только пока действует жест пользователя */
+function syncLock() {
+  const want = lookWanted(), has = isLocked();
+  if (!want) { if (has) { mouse.exiting = true; try { document.exitPointerLock(); } catch (e) { mouse.exiting = false; } } return; }
+  if (has || mouse.pending || mouse.blocked || !scr.requestPointerLock) return;
+  const now = performance.now();
+  if (now - mouse.lastReq < 700) return;
+  if (navigator.userActivation && !navigator.userActivation.isActive) return;
+  mouse.lastReq = now; mouse.pending = true;
+  const fail = err => { mouse.pending = false; mouse.failed = true; if (err && /sandbox|NotSupported/i.test((err.name || '') + ' ' + (err.message || ''))) mouse.blocked = true; };
+  try { const r = scr.requestPointerLock(); if (r && r.then) r.then(() => { mouse.pending = false; }, fail); else setTimeout(() => { mouse.pending = false; }, 400); } catch (e) { fail(e); }
+}
+document.addEventListener('pointerlockchange', () => {
+  const on = isLocked(); mouse.pending = false;
+  document.body.classList.toggle('mlook', on);
+  if (on) {
+    mouse.failed = false; mouse.ignoreUntil = performance.now() + 80;
+    if (!mouse.told) { mouse.told = true; toast('Мышь: ЛКМ удар · ПКМ магия · Esc выход', 2600); }
+  } else {
+    mouse.atk = mouse.fire = false;
+    if (mouse.wasLocked && !mouse.exiting && G.mode === 'play') pauseGame();
+  }
+  mouse.exiting = false; mouse.wasLocked = on;
+});
+document.addEventListener('pointerlockerror', () => { mouse.pending = false; mouse.failed = true; });
+document.addEventListener('click', () => syncLock());
+/* поворот от движения захваченной мыши */
+document.addEventListener('mousemove', e => {
+  if (!isLocked() || G.mode !== 'play' || performance.now() < mouse.ignoreUntil) return;
+  lookAcc += clamp(e.movementX || 0, -250, 250) * MRAD * MSENS[mouse.sens];
+});
+/* положение курсора и тип указателя (для запасного режима и выбора способа обзора) */
+document.addEventListener('pointermove', e => {
+  mouse.type = e.pointerType; if (e.pointerType !== 'mouse') return;
+  const r = scr.getBoundingClientRect(); mouse.nx = r.width ? clamp((e.clientX - r.left) / r.width * 2 - 1, -1, 1) : 0;
+  mouse.overBtn = !!(e.target && e.target.closest && e.target.closest('button'));
+}, true);
+document.documentElement.addEventListener('mouseleave', () => { mouse.nx = 0; });
+/* запасной режим: скорость поворота растёт у краёв экрана */
+function mouseSoftTurn() {
+  if (!mouse.soft || mouse.pending || mouse.overBtn || isLocked() || !lookWanted()) return 0;
+  const a = Math.abs(mouse.nx); if (a < 0.4) return 0;
+  return Math.sign(mouse.nx) * Math.pow((a - 0.4) / 0.6, 1.6) * 3.0 * MSENS[mouse.sens];
+}
+function mouseTick(dt) {
+  syncLock();
+  if (!lookWanted()) { mouse.soft = false; mouse.atk = mouse.fire = false; mouse.idle = 0; return; }
+  if (isLocked() || mouse.soft || mouse.pending) { mouse.idle = 0; return; }
+  if (!mouse.hinted && (mouse.idle += dt) > 1.2) { mouse.hinted = true; toast('Кликни по экрану, чтобы включить обзор мышью', 2800); }
+}
+/* кнопки мыши в режиме шутера: ЛКМ удар, ПКМ заклинание (состояние берём из e.buttons, чтобы ловить и одновременное нажатие) */
+function mouseButtons(e) {
+  const a = !!(e.buttons & 1), f = !!(e.buttons & 2);
+  if (a && !mouse.atk) act('attack'); if (f && !mouse.fire) act('fire');
+  mouse.atk = a; mouse.fire = f;
+}
 scr.addEventListener('contextmenu', e => e.preventDefault());
 scr.addEventListener('wheel', e => { if (G.mode === 'play') { e.preventDefault(); act(e.deltaY > 0 ? 'spellNext' : 'spellPrev'); } }, { passive: false });
 scr.addEventListener('pointerdown', e => {
   unlockAudio();
   if (e.pointerType === 'touch') { setDevice('touch'); markTouch(); } else setDevice('kbd');
+  mouse.type = e.pointerType;
+  if (e.pointerType === 'mouse' && lookWanted()) {
+    mouse.soft = true; syncLock(); mouseButtons(e);
+    try { scr.setPointerCapture(e.pointerId); } catch (_) { }
+    return;
+  }
   if (drag) return;
   drag = { id: e.pointerId, x: e.clientX, moved: 0, t: performance.now(), touch: e.pointerType === 'touch' };
   try { scr.setPointerCapture(e.pointerId); } catch (_) { }
 });
+scr.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && lookWanted() && (mouse.atk || mouse.fire || e.buttons)) mouseButtons(e); });
 scr.addEventListener('pointermove', e => {
   if (!drag || drag.id !== e.pointerId) return;
   const dx = e.clientX - drag.x; drag.x = e.clientX; drag.moved += Math.abs(dx);
@@ -3633,7 +3624,11 @@ const endDrag = e => {
   if (e.type === 'pointerup' && drag.moved < 10 && performance.now() - drag.t < 380 && G.mode === 'play') act('attack');
   drag = null;
 };
-scr.addEventListener('pointerup', endDrag); scr.addEventListener('pointercancel', endDrag);
+const endPtr = e => {
+  if (e.pointerType === 'mouse' && (mouse.atk || mouse.fire)) { if (e.type === 'pointercancel') mouse.atk = mouse.fire = false; else mouseButtons(e); }
+  endDrag(e);
+};
+scr.addEventListener('pointerup', endPtr); scr.addEventListener('pointercancel', endPtr);
 
 /* ---- сенсорный интерфейс ---- */
 function markTouch() { if (!sawTouch) { sawTouch = true; applyTouchUI(); } }
@@ -3710,7 +3705,7 @@ addEventListener('gamepadconnected', e => {
 
 /* ---- сведение всех источников ---- */
 function readInput(dt) {
-  const pad = pollPad();
+  const pad = pollPad(); mouseTick(dt);
   let fwd = 0, strafe = 0, turn = 0, wantAtk = false, wantFire = false;
   if (G.mode === 'play') {
     if (keys.has('KeyW') || keys.has('ArrowUp')) fwd += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) fwd -= 1;
@@ -3719,8 +3714,9 @@ function readInput(dt) {
     const jl = Math.hypot(joy.x, joy.y);
     if (jl > 0.15) { const k = (jl - 0.15) / 0.85 / jl; fwd -= joy.y * k; strafe += joy.x * k; }
     if (pad) { fwd += pad.fwd; strafe += pad.strafe; turn += pad.turn; }
-    wantAtk = keys.has('Space') || keys.has('KeyJ') || held.atkTouch || !!(pad && pad.atk);
-    wantFire = keys.has('KeyF') || keys.has('KeyK') || held.fireTouch || !!(pad && pad.fire);
+    turn += mouseSoftTurn();
+    wantAtk = keys.has('Space') || keys.has('KeyJ') || held.atkTouch || mouse.atk || !!(pad && pad.atk);
+    wantFire = keys.has('KeyF') || keys.has('KeyK') || held.fireTouch || mouse.fire || !!(pad && pad.fire);
     if (wantAtk) act('attack'); if (wantFire) act('fire');
   }
   const look = G.mode === 'play' ? lookAcc : 0; lookAcc = 0;
@@ -3741,6 +3737,12 @@ function toggleSound() { setMuted(!muted); $('btnMute').classList.toggle('off', 
 $('btnMute').addEventListener('click', () => { unlockAudio(); toggleSound(); });
 $('btnSnd').addEventListener('click', () => { unlockAudio(); toggleSound(); });
 $('btnTouch').addEventListener('click', () => { touchPref = touchPref === 'auto' ? 'on' : touchPref === 'on' ? 'off' : 'auto'; applyTouchUI(); });
+const mouseLabel = () => 'Чувствительность мыши: ' + (mouse.sens + 1) + '/' + MSENS.length;
+$('btnMouse').textContent = mouseLabel();
+$('btnMouse').addEventListener('click', () => {
+  unlockAudio(); mouse.sens = (mouse.sens + 1) % MSENS.length; $('btnMouse').textContent = mouseLabel();
+  try { localStorage.setItem(MKEY, String(mouse.sens)); } catch (e) { }
+});
 
 
 /* ---- полный экран: настоящий (Fullscreen API) и запасной, на всю область страницы ---- */
@@ -3761,73 +3763,18 @@ async function setFull(on) {
     fullReal = false;
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { }
   }
-  updateFullUI(); fitRender();
+  updateFullUI(); fitRender(); syncLock();
 }
 const toggleFull = () => { unlockAudio(); setFull(!document.body.classList.contains('full')); };
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && fullReal) { fullReal = false; document.body.classList.remove('full'); updateFullUI(); }
-  fitRender();
+  fitRender(); syncLock();
 });
 ['btnFull', 'btnFullP', 'btnFullT'].forEach(id => $(id).addEventListener('click', toggleFull));
 $('btnFull').addEventListener('pointerdown', e => e.stopPropagation());
 addEventListener('keydown', e => { if (e.code === 'KeyG' && !e.repeat) toggleFull(); });
 if (window.ResizeObserver) new ResizeObserver(fitRender).observe(canvas);
 addEventListener('resize', fitRender);
-
-/* ---- Multiplayer UI handlers ---- */
-$('btnMultiplayer').addEventListener('click', guard('title', () => {
-  hideOverlays(); showOverlay('ovMultiplayer');
-}));
-
-$('btnCreateHost').addEventListener('click', () => {
-  unlockAudio(); mpCreateHost();
-});
-
-$('btnJoinAsClient').addEventListener('click', () => {
-  unlockAudio(); mpJoinAsClient();
-});
-
-$('btnCopyOffer').addEventListener('click', () => {
-  mpCopyOffer();
-});
-
-$('btnPasteAnswer').addEventListener('click', () => {
-  mpPasteAnswer();
-});
-
-$('btnPasteOfferCreateAnswer').addEventListener('click', () => {
-  mpPasteOfferCreateAnswer();
-});
-
-$('btnCopyAnswer').addEventListener('click', () => {
-  mpCopyAnswer();
-});
-
-$('btnCancelHost').addEventListener('click', () => {
-  mpOnDisconnected();
-});
-
-$('btnCancelClient').addEventListener('click', () => {
-  mpOnDisconnected();
-});
-
-$('btnStartMP').addEventListener('click', () => {
-  if (MP.connected && MP.peerId === 1) {
-    hideOverlays();
-    startGame();
-    // Send game-start signal to client via Data Channel with seed and floor
-    mpSend({ type: 'game-start', data: { seed: G.seed, floor: G.floor } });
-  }
-});
-
-$('btnDisconnect').addEventListener('click', () => {
-  mpOnDisconnected();
-});
-
-$('btnBackFromMP').addEventListener('click', () => {
-  mpOnDisconnected();
-  hideOverlays(); showOverlay('ovTitle');
-});
 
 /* ---- иконки и запуск ---- */
 $('icoAtk').src = iconURL(SPR.swordSteel, Math.PI / 4);
