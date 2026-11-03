@@ -324,6 +324,7 @@ body[data-mode="menu"] .joy-col, body[data-mode="menu"] .btn-col { visibility: h
             <button type="button" class="pixbtn" id="btnSnd">Звук: вкл</button>
             <button type="button" class="pixbtn" id="btnTouch">Сенсорные кнопки: авто</button>
             <button type="button" class="pixbtn" id="btnMouse">Чувствительность мыши: 3/5</button>
+            <button type="button" class="pixbtn" id="btnGfx">Графика: высокая</button>
             <button type="button" class="pixbtn" id="btnRestart">Заново</button>
           </div>
           <p class="sub">Esc, P или Start закрывают паузу. Прогресс сохраняется при спуске на новый этаж.</p>
@@ -1012,6 +1013,7 @@ function decorateTex(b, t) {
   if (!t.floorF) t.floorF = [t.floorT];
   if (!t.patchF) t.patchF = PATCHES[b.id](b.seed + 60);
   if (!t.ceilMode) { t.ceilMode = 'tex'; t.ceilLit = false; }
+  buildGloss(b, t);
   return t;
 }
 
@@ -2094,6 +2096,166 @@ function tryGen(idx, seed) {
   };
 }
 
+/* ============ СВЕТ: карта освещения, глянец полов, динамические огни ============ */
+const LM = 8;                                   // ячеек карты света на одну клетку мира
+const GFX = { high: true, auto: true };         // high: отражения, направленные тени, блум, огни от снарядов
+const LM_FLAT = 0x808080;                       // 128 = множитель 1.0 по каждому каналу
+let LR = 128, LG = 128, LB = 128;               // результат lmSample
+
+/* средний цвет самых ярких пикселей: цвет, которым светит лампа или кристалл */
+const EMIT_CACHE = new Map();
+function emitColor(data, w, h, x0, y0, x1, y1) {
+  let r = 0, g = 0, b = 0, wt = 0;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const c = data[y * w + x]; if ((c >>> 24) === 0) continue;
+    const R = c & 255, G = (c >> 8) & 255, B = (c >> 16) & 255, m = Math.max(R, G, B) / 255, k = m * m * m;
+    r += R * k; g += G * k; b += B * k; wt += k;
+  }
+  if (!wt) return [1, 0.8, 0.5];
+  r /= wt; g /= wt; b /= wt;
+  const mx = Math.max(r, g, b, 1);
+  const out = [r / mx, g / mx, b / mx], lum = (out[0] + out[1] + out[2]) / 3;
+  return out.map(v => clamp(lum + (v - lum) * 1.35, 0.05, 1));   // чуть насыщеннее, свет не должен быть серым
+}
+function sprLight(spr) {
+  if (!spr) return [1, 0.8, 0.5];
+  let c = EMIT_CACHE.get(spr); if (!c) { c = emitColor(spr.data, spr.w, spr.h, 0, 0, spr.w, spr.h); EMIT_CACHE.set(spr, c); }
+  return c;
+}
+function lampLight(T) {
+  const lt = T.walls.T && T.walls.T[0]; if (!lt) return [1, 0.7, 0.4];
+  if (!lt._light) lt._light = emitColor(lt, TS, TS, 6, 2, 26, 22);
+  return lt._light;
+}
+
+/* карта освещения мира: окружение + затемнение углов (AO) + цветные огни с тенями от стен и колонн */
+function buildLightmap(world, ents) {
+  const W = world.w, H = world.h, g = world.grid, LW = W * LM, LH = H * LM, N = LW * LH, T = world.tex;
+  const R = new Float32Array(N), G_ = new Float32Array(N), B = new Float32Array(N), solid = new Uint8Array(N);
+  const amb = T.amb || 0.9, solidAt = (x, y) => x < 0 || y < 0 || x >= W || y >= H || g[y][x] !== '.';
+  for (let ty = 0; ty < LH; ty++) {
+    const y = (ty + 0.5) / LM, cy = y | 0;
+    for (let tx = 0; tx < LW; tx++) {
+      const x = (tx + 0.5) / LM, cx = x | 0, o = ty * LW + tx;
+      if (g[cy][cx] !== '.') { solid[o] = 1; continue; }
+      let d = 9;
+      for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+        if (!i && !j) continue;
+        const nx = cx + i, ny = cy + j; if (!solidAt(nx, ny)) continue;
+        const ex = Math.max(nx - x, 0, x - nx - 1), ey = Math.max(ny - y, 0, y - ny - 1), dd = Math.sqrt(ex * ex + ey * ey);
+        if (dd < d) d = dd;
+      }
+      const u = clamp(d / 0.75, 0, 1), ao = 0.66 + 0.34 * (u * u * (3 - 2 * u));
+      R[o] = G_[o] = B[o] = amb * ao;
+    }
+  }
+  /* источники: лампы на стенах и светящийся декор */
+  const src = [], lc = lampLight(T);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'T') src.push({ x: x + 0.5, y: y + 0.5, c: lc, I: (T.lampI || 1), R: 6.2, cx: x, cy: y });
+  for (const e of ents) {
+    if (e.kind !== 'deco') continue;
+    const dk = DECOR[e.k]; if (!dk.glow) continue;
+    src.push({ x: e.x, y: e.y, c: sprLight(SPR[dk.spr]), I: (dk.hang ? 0.5 : 0.7) * (T.lampI || 1), R: 3.8, cx: -1, cy: -1 });
+  }
+  world.lights = src;
+  for (const s of src) {
+    const x0 = Math.max(0, ((s.x - s.R) * LM) | 0), x1 = Math.min(LW - 1, ((s.x + s.R) * LM) | 0);
+    const y0 = Math.max(0, ((s.y - s.R) * LM) | 0), y1 = Math.min(LH - 1, ((s.y + s.R) * LM) | 0);
+    for (let ty = y0; ty <= y1; ty++) {
+      const py = (ty + 0.5) / LM;
+      for (let tx = x0; tx <= x1; tx++) {
+        const o = ty * LW + tx; if (solid[o]) continue;
+        const px = (tx + 0.5) / LM, dx = px - s.x, dy = py - s.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d >= s.R) continue;
+        /* луч от источника к точке: любая стена или колонна по пути даёт тень */
+        const n = Math.max(2, Math.ceil(d / 0.2)); let ok = true;
+        for (let i = 1; i < n; i++) {
+          const qx = (s.x + dx * i / n) | 0, qy = (s.y + dy * i / n) | 0;
+          if ((qx !== s.cx || qy !== s.cy) && g[qy][qx] !== '.') { ok = false; break; }
+        }
+        if (!ok) continue;
+        const k = 1 - d / s.R, a = s.I * k * k * (0.55 + 0.45 * k);
+        R[o] += a * s.c[0]; G_[o] += a * s.c[1]; B[o] += a * s.c[2];
+      }
+    }
+  }
+  const lm = new Uint32Array(N), cm = v => v < 1 ? v : 1 + (v - 1) * 0.58;   // мягкое сжатие: яркие места не выгорают в белый
+  for (let o = 0; o < N; o++) {
+    if (solid[o]) { lm[o] = LM_FLAT; continue; }
+    const r = Math.min(255, (cm(R[o]) * 128) | 0), gg = Math.min(255, (cm(G_[o]) * 128) | 0), b = Math.min(255, (cm(B[o]) * 128) | 0);
+    lm[o] = (r | (gg << 8) | (b << 16)) >>> 0;
+  }
+  world.lm = lm; world.lmw = LW; world.lmh = LH;
+}
+
+/* билинейная выборка карты света в координатах клеток; результат в LR/LG/LB */
+function lmSample(world, x, y) {
+  const lm = world.lm;
+  if (!lm) { LR = LG = LB = 128; return; }
+  const LW = world.lmw, LH = world.lmh;
+  let u = x * LM - 0.5, v = y * LM - 0.5;
+  u = u < 0 ? 0 : u > LW - 1.001 ? LW - 1.001 : u; v = v < 0 ? 0 : v > LH - 1.001 ? LH - 1.001 : v;
+  const i = u | 0, j = v | 0, fu = u - i, fv = v - j, o = j * LW + i;
+  const a = lm[o], b = lm[o + 1], c = lm[o + LW], d = lm[o + LW + 1];
+  const w0 = (1 - fu) * (1 - fv), w1 = fu * (1 - fv), w2 = (1 - fu) * fv, w3 = fu * fv;
+  LR = (a & 255) * w0 + (b & 255) * w1 + (c & 255) * w2 + (d & 255) * w3;
+  LG = ((a >> 8) & 255) * w0 + ((b >> 8) & 255) * w1 + ((c >> 8) & 255) * w2 + ((d >> 8) & 255) * w3;
+  LB = ((a >> 16) & 255) * w0 + ((b >> 16) & 255) * w1 + ((c >> 16) & 255) * w2 + ((d >> 16) & 255) * w3;
+}
+/* куда падает тень от точки: против градиента яркости карты света; длина 0..0.5 клетки */
+function shadowDir(world, x, y, out) {
+  out.x = out.y = 0;
+  if (!world.lm) return;
+  const f = (ax, ay) => { lmSample(world, ax, ay); return LR + LG + LB; };
+  const gx = f(x - 0.45, y) - f(x + 0.45, y), gy = f(x, y - 0.45) - f(x, y + 0.45);
+  const m = Math.hypot(gx, gy); if (m < 14) return;
+  const len = Math.min(0.5, m / 420);
+  out.x = gx / m * len; out.y = gy / m * len;
+}
+
+/* ---------- глянец полов: чем ярче пиксель, тем ближе к зеркалу; швы и трещины не отражают ---------- */
+function glossMask(t, base, water) {
+  if (!base) return null;
+  const n = t.length, lum = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const c = t[i]; lum[i] = (c & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + ((c >> 16) & 255) * 0.11; }
+  const sorted = Float32Array.from(lum).sort(), thr = sorted[(n * 0.12) | 0];
+  const m = new Uint8Array(n);
+  for (let i = 0; i < n; i++) m[i] = Math.round(base * 127 * (lum[i] >= thr ? 1 : 0.2)) | (water ? 128 : 0);
+  return m;
+}
+const REFL = {
+  crypt: { f: 0.12, s: 0.42, p1: 0.65, p2: 0, w1: 1 },
+  cave: { f: 0.1, s: 0.38, p1: 0, p2: 0.65, w2: 1 },
+  fire: { f: 0.16, s: 0.38, p1: 0, p2: 0 },
+  ice: { f: 0.42, s: 0.55, p1: 0.55, p2: 0.62 },
+  throne: { f: 0.18, s: 0.45, p1: 0.5, p2: 0 },
+  forest: { f: 0, s: 0.35, p1: 0, p2: 0.7, w2: 1 },
+  desert: { f: 0, s: 0.45, p1: 0, p2: 0 },
+  sunken: { f: 0.45, fw: 1, s: 0.55, p1: 0.12, p2: 0.14 },
+  works: { f: 0.1, s: 0.4, p1: 0.7, p2: 0.3 }
+};
+const LAMP_I = { desert: 0.55, ice: 0.42, sunken: 0.65, forest: 0.9, works: 0.9 }, AMB_L = { desert: 0.82, ice: 0.76, sunken: 0.84 }, BLOOM_L = { ice: 242, sunken: 226, desert: 222 };
+function buildGloss(b, t) {
+  const r = REFL[b.id] || {};
+  t.lampI = LAMP_I[b.id] || 1; t.amb = AMB_L[b.id] || 0.9; t.bloomT = BLOOM_L[b.id] || 0;
+  t.glossF = t.floorF.map(f => glossMask(f, r.f, r.fw));
+  t.glossS = glossMask(t.floorS, r.s, false);
+  t.glossP = [t.patchF[0].map(f => glossMask(f, r.p1, r.w1)), t.patchF[1].map(f => glossMask(f, r.p2, r.w2))];
+  t.glossAny = !!(r.f || r.s || r.p1 || r.p2);
+}
+
+/* ---------- динамические огни: снаряды, взрывы, вспышка заклинания ---------- */
+function buildDynLights() {
+  if (!GFX.high || G.mode === 'title') return null;
+  const out = [], add = (x, y, c, I, Rr) => { const d = (x - P.x) * (x - P.x) + (y - P.y) * (y - P.y); if (d < 120) out.push({ x, y, r: c[0], g: c[1], b: c[2], I, R2: Rr * Rr, iR2: 1 / (Rr * Rr), d }); };
+  for (const p of G.proj) add(p.x, p.y, p.friendly ? (p.kind === 'frost' ? [0.45, 0.78, 1] : p.kind === 'bolt' ? [1, 0.95, 0.5] : [1, 0.58, 0.2]) : sprLight(SPR[p.spr] || SPR.orb), 0.95, 3.4);
+  for (const f of G.fx) { const k = 1 - f.t / f.dur; add(f.x, f.y, f.tint ? [clamp(f.tint[0] / 300, 0.2, 1), clamp(f.tint[1] / 300, 0.2, 1), clamp(f.tint[2] / 300, 0.2, 1)] : [1, 0.72, 0.38], 1.25 * k, 4.2); }
+  if (G.cast > 0) { const S = SPELL_BY_ID[G.castSpell] || SPELLS[0]; add(P.x + Math.cos(P.a) * 0.35, P.y + Math.sin(P.a) * 0.35, S.id === 'frost' ? [0.45, 0.78, 1] : S.id === 'bolt' ? [1, 0.95, 0.5] : S.id === 'heal' ? [0.5, 1, 0.6] : [1, 0.58, 0.2], 0.7 * (G.cast / 0.32), 3.0); }
+  if (!out.length) return null;
+  out.sort((a, b) => a.d - b.d);
+  return out.slice(0, 4);
+}
+
 /* ============ РЕЙКАСТИНГ-ДВИЖОК: биомы, туман, спрайты ============ */
 const canvas = document.getElementById('screen');
 const ctx = canvas.getContext('2d', { alpha: false });
@@ -2102,6 +2264,19 @@ ctx.imageSmoothingEnabled = false;
 let frameImg = ctx.createImageData(RW, RH);
 let buf = new Uint32Array(frameImg.data.buffer);
 let zbuf = new Float32Array(RW);
+let gl = new Uint8Array(RW * RH);          // глянец пикселей пола (бит 128: вода, рябь)
+let wbot = new Int16Array(RW);             // первая строка пола под стеной в колонке
+let vigCv = null, bloomCv = null, bloomCtx = null, bloomImg = null, bloomBuf = null, bloomT = null, BW = 0, BH = 0;
+function makeBloom() {
+  BW = Math.max(8, RW >> 2); BH = RH >> 2;
+  bloomCv = document.createElement('canvas'); bloomCv.width = BW; bloomCv.height = BH;
+  bloomCtx = bloomCv.getContext('2d'); bloomImg = bloomCtx.createImageData(BW, BH);
+  bloomBuf = new Uint32Array(bloomImg.data.buffer); bloomT = new Float32Array(BW * BH * 3);
+  vigCv = document.createElement('canvas'); vigCv.width = RW; vigCv.height = RH;            // виньетка: края кадра чуть темнее
+  const vc = vigCv.getContext('2d'), gr = vc.createRadialGradient(RW / 2, RH / 2, RH * 0.42, RW / 2, RH / 2, Math.hypot(RW, RH) * 0.5);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.4)'); vc.fillStyle = gr; vc.fillRect(0, 0, RW, RH);
+}
+makeBloom();
 const FOV = 0.7;
 let VIEW = { dx: 1, dy: 0, px: 0, py: 0, hz: RH / 2, x: 0, y: 0 };
 
@@ -2110,6 +2285,7 @@ function setRenderWidth(w) {
   if (w === RW) return;
   RW = w; canvas.width = RW; canvas.height = RH; ctx.imageSmoothingEnabled = false;
   frameImg = ctx.createImageData(RW, RH); buf = new Uint32Array(frameImg.data.buffer); zbuf = new Float32Array(RW);
+  gl = new Uint8Array(RW * RH); wbot = new Int16Array(RW); makeBloom();
 }
 function fitRender() {
   const r = canvas.getBoundingClientRect(); if (!r.width || !r.height) return;
@@ -2127,8 +2303,70 @@ function projectPoint(x, y, z) {
   return { x: (RW / 2) * (1 + tx / ty), y: VIEW.hz + (0.5 - z) * unit, ty };
 }
 
-function renderWorld(world, P, sprites, time, bob) {
-  const g = world.grid, W = world.w, H = world.h, T = world.tex;
+/* затемнение стен у пола и потолка (по строке текстуры); у ламп стена светится сама */
+const AO_WALL = new Int16Array(TS), AO_FLAT = new Int16Array(TS).fill(256);
+for (let r = 0; r < TS; r++) { const lo = Math.max(0, (r - 21) / 10.5), hi = Math.max(0, (3 - r) / 3.5); AO_WALL[r] = Math.round(256 * (1 - 0.36 * lo * lo - 0.1 * hi * hi)); }
+const REFL_GAIN = 1.9, BLOOM_T = 212, SH_DIR = { x: 0, y: 0 };
+
+/* мягкая тень на полу: эллипс или вытянутая капсула; рисуется только на полу перед стеной */
+function floorShadow(cx, cy, cx2, cy2, hw, hh, alpha, ty) {
+  const xa = Math.max(0, Math.floor(Math.min(cx, cx2) - hw)), xb = Math.min(RW - 1, Math.ceil(Math.max(cx, cx2) + hw));
+  const ya = Math.max(0, Math.floor(Math.min(cy, cy2) - hh)), yb = Math.min(RH - 1, Math.ceil(Math.max(cy, cy2) + hh));
+  const ihw = 1 / hw, ihh = 1 / hh;
+  for (let x = xa; x <= xb; x++) {
+    if (ty >= zbuf[x]) continue;
+    const yLim = wbot[x];
+    for (let y = ya < yLim ? yLim : ya; y <= yb; y++) {
+      let cov = 0;
+      for (let k = 0; k < 3; k++) {
+        const t = k * 0.5, ex = (x - (cx + (cx2 - cx) * t)) * ihw, ey = (y - (cy + (cy2 - cy) * t)) * ihh, d = ex * ex + ey * ey;
+        if (d < 1 && 1 - d > cov) cov = 1 - d;
+      }
+      if (cov <= 0) continue;
+      const m = 256 - ((alpha * (cov > 0.55 ? 1 : cov * 1.8) * 256) | 0), i = y * RW + x, c = buf[i];
+      buf[i] = (0xff000000 | (((((c >> 16) & 255) * m) >> 8) << 16) | (((((c >> 8) & 255) * m) >> 8) << 8) | (((c & 255) * m) >> 8)) >>> 0;
+    }
+  }
+}
+
+/* свечение ярких пикселей: уменьшенная копия кадра, размытие и сложение поверх */
+function bloomPass(thr) {
+  const bw = BW, bh = BH, bt = bloomT; let any = 0;
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+    let r = 0, g = 0, b = 0;
+    for (let j = 0; j < 4; j++) {
+      const row = (by * 4 + j) * RW + bx * 4;
+      for (let i = 0; i < 4; i++) {
+        const c = buf[row + i], R = c & 255, G = (c >> 8) & 255, B = (c >> 16) & 255, m = R > G ? (R > B ? R : B) : (G > B ? G : B);
+        if (m > thr) { const w = (m - thr) / (255 - thr); r += R * w; g += G * w; b += B * w; }
+      }
+    }
+    const o = (by * bw + bx) * 3; bt[o] = r / 16; bt[o + 1] = g / 16; bt[o + 2] = b / 16; if (r + g + b > 0) any = 1;
+  }
+  if (!any) return;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {      // по горизонтали
+      const o = (by * bw + bx) * 3, l = bx > 0 ? o - 3 : o, r2 = bx < bw - 1 ? o + 3 : o;
+      for (let k = 0; k < 3; k++) bt[o + k] = (bt[l + k] + bt[o + k] * 2 + bt[r2 + k]) * 0.25;
+    }
+    for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {      // по вертикали
+      const o = (by * bw + bx) * 3, u = by > 0 ? o - bw * 3 : o, d = by < bh - 1 ? o + bw * 3 : o;
+      for (let k = 0; k < 3; k++) bt[o + k] = (bt[u + k] + bt[o + k] * 2 + bt[d + k]) * 0.25;
+    }
+  }
+  for (let i = 0, n = bw * bh; i < n; i++) {
+    const o = i * 3, r = Math.min(255, bt[o] * 1.7), g = Math.min(255, bt[o + 1] * 1.7), b = Math.min(255, bt[o + 2] * 1.7);
+    bloomBuf[i] = (0xff000000 | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0)) >>> 0;
+  }
+  bloomCtx.putImageData(bloomImg, 0, 0);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.7; ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(bloomCv, 0, 0, RW, RH);
+  ctx.restore(); ctx.imageSmoothingEnabled = false;
+}
+
+function renderWorld(world, P, sprites, time, bob, dyn) {
+  const g = world.grid, W = world.w, H = world.h, T = world.tex, hi = GFX.high, lm = world.lm, LW = world.lmw;
+  const refl = hi && T.glossAny, nd = dyn ? dyn.length : 0;
   const dx = Math.cos(P.a), dy = Math.sin(P.a), pl = FOV * (RW / RH) / 1.6, px = -dy * pl, py = dx * pl;
   const hz = ((RH / 2) + bob) | 0;
   VIEW = { dx, dy, px, py, hz, x: P.x, y: P.y };
@@ -2137,9 +2375,12 @@ function renderWorld(world, P, sprites, time, bob) {
 
   /* ---- пол и потолок ---- */
   const fi = ((time * 3.2) | 0) & 3;
-  const floorT = T.floorF[fi % T.floorF.length], hallT = T.floorS, sp = world.special;
+  const nF = T.floorF.length, nP0 = T.patchF[0].length, nP1 = T.patchF[1].length;
+  const floorT = T.floorF[fi % nF], hallT = T.floorS, sp = world.special;
+  const gFloor = refl ? T.glossF[fi % nF] : null, gHall = refl ? T.glossS : null;
   const ceilT = T.ceilF ? T.ceilF[fi % T.ceilF.length] : T.ceilT, ceilLit = T.ceilLit;
-  const pm = world.patch, pt1 = T.patchF[0][fi % T.patchF[0].length], pt2 = T.patchF[1][fi % T.patchF[1].length];
+  const pm = world.patch, pt1 = T.patchF[0][fi % nP0], pt2 = T.patchF[1][fi % nP1];
+  const gp1 = refl ? T.glossP[0][fi % nP0] : null, gp2 = refl ? T.glossP[1][fi % nP1] : null;
   const skyM = T.ceilMode === 'sky' ? T.sky : null, skyOff = skyM ? ((P.a * RW / (2 * pl)) | 0) : 0;
   const rx0 = dx - px, ry0 = dy - py, rx1 = dx + px, ry1 = dy + py;
   const pMax = Math.max(hz, RH - hz);
@@ -2164,16 +2405,32 @@ function renderWorld(world, P, sprites, time, bob) {
     for (let x = 0; x < RW; x++, fx += stx, fy += sty) {
       const cx = fx | 0, cy = fy | 0;
       const ti = (((fy - cy) * TS) & (TS - 1)) * TS + (((fx - cx) * TS) & (TS - 1));
+      /* свет в этой точке пола: карта освещения + огни снарядов */
+      let lr = 128, lg = 128, lb = 128;
+      if (fx >= 0 && fy >= 0 && fx < W && fy < H) {
+        if (lm) { const lv = lm[(((fy * LM) | 0) * LW) + ((fx * LM) | 0)]; lr = lv & 255; lg = (lv >> 8) & 255; lb = (lv >> 16) & 255; }
+        if (nd) for (let j = 0; j < nd; j++) {
+          const d = dyn[j], ex = fx - d.x, ey = fy - d.y, d2 = ex * ex + ey * ey;
+          if (d2 < d.R2) { const k = 1 - d2 * d.iR2, kk = k * k * d.I * 128; lr += kk * d.r; lg += kk * d.g; lb += kk * d.b; }
+        }
+        if (lr > 255) lr = 255; if (lg > 255) lg = 255; if (lb > 255) lb = 255;
+      }
+      lr |= 0; lg |= 0; lb |= 0;
       if (doF) {
-        let ft = floorT;
-        if (sp && cx >= sp.x0 && cx <= sp.x1 && cy >= sp.y0 && cy <= sp.y1) ft = hallT;
-        else if (pm && cx >= 0 && cy >= 0 && cx < W && cy < H) { const pv = pm[cy * W + cx]; if (pv === 1) ft = pt1; else if (pv === 2) ft = pt2; }
+        let ft = floorT, gt = gFloor;
+        if (sp && cx >= sp.x0 && cx <= sp.x1 && cy >= sp.y0 && cy <= sp.y1) { ft = hallT; gt = gHall; }
+        else if (pm && cx >= 0 && cy >= 0 && cx < W && cy < H) { const pv = pm[cy * W + cx]; if (pv === 1) { ft = pt1; gt = gp1; } else if (pv === 2) { ft = pt2; gt = gp2; } }
         const c = ft[ti];
-        buf[rowF + x] = (0xff000000 | ((((c >> 16) & 255) * s + fB) >> 8 << 16) | ((((c >> 8) & 255) * s + fG) >> 8 << 8) | (((c & 255) * s + fR) >> 8)) >>> 0;
+        let r = ((((c & 255) * s * lr) >> 7) + fR) >> 8, gg = (((((c >> 8) & 255) * s * lg) >> 7) + fG) >> 8, b = (((((c >> 16) & 255) * s * lb) >> 7) + fB) >> 8;
+        if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255;
+        buf[rowF + x] = (0xff000000 | (b << 16) | (gg << 8) | r) >>> 0;
+        if (refl) gl[rowF + x] = gt ? gt[ti] : 0;
       }
       if (doC && !skyM) {
-        const c = ceilT[ti], s2 = ceilLit ? s : s >> 1, i2 = 256 - s2;
-        buf[rowC + x] = (0xff000000 | ((((c >> 16) & 255) * s2 + fb * i2) >> 8 << 16) | ((((c >> 8) & 255) * s2 + fg * i2) >> 8 << 8) | (((c & 255) * s2 + fr * i2) >> 8)) >>> 0;
+        const c = ceilT[ti], s2 = ceilLit ? s : s >> 1, i2 = 256 - s2, cr = (lr + 128) >> 1, cg = (lg + 128) >> 1, cb = (lb + 128) >> 1;
+        let r = ((((c & 255) * s2 * cr) >> 7) + fr * i2) >> 8, gg = (((((c >> 8) & 255) * s2 * cg) >> 7) + fg * i2) >> 8, b = (((((c >> 16) & 255) * s2 * cb) >> 7) + fb * i2) >> 8;
+        if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255;
+        buf[rowC + x] = (0xff000000 | (b << 16) | (gg << 8) | r) >>> 0;
       }
     }
   }
@@ -2212,10 +2469,23 @@ function renderWorld(world, P, sprites, time, bob) {
     const dist = Math.max(0.05, side === 0 ? sdx - ddx : sdy - ddy);
     zbuf[x] = dist;
     const lineH = (RH / dist) | 0;
-    let wx = side === 0 ? P.y + dist * rdy : P.x + dist * rdx; wx -= Math.floor(wx);
+    let wx = side === 0 ? P.y + dist * rdy : P.x + dist * rdx;
+    /* свет на грани стены: берём точку чуть впереди неё, в открытой клетке */
+    let lR = 128, lG = 128, lB = 128;
+    if (ch !== 'T') {
+      const sxp = side === 0 ? (sx > 0 ? mx - 0.22 : mx + 1.22) : wx, syp = side === 0 ? wx : (sy > 0 ? my - 0.22 : my + 1.22);
+      lmSample(world, sxp, syp); lR = LR; lG = LG; lB = LB;
+      if (nd) for (let j = 0; j < nd; j++) {
+        const d = dyn[j], ex = sxp - d.x, ey = syp - d.y, d2 = ex * ex + ey * ey;
+        if (d2 < d.R2) { const k = 1 - d2 * d.iR2, kk = k * k * d.I * 128; lR += kk * d.r; lG += kk * d.g; lB += kk * d.b; }
+      }
+      lR = lR > 255 ? 255 : lR | 0; lG = lG > 255 ? 255 : lG | 0; lB = lB > 255 ? 255 : lB | 0;
+    }
+    wx -= Math.floor(wx);
     let tx = (wx * TS) | 0;
     if ((side === 0 && rdx > 0) || (side === 1 && rdy < 0)) tx = TS - 1 - tx;
     let tex = WL[ch] || WL['#']; if (ch === 'T') tex = tex[torchFrame];
+    const AOr = ch === 'T' ? AO_FLAT : AO_WALL;
     let s = lightD(dist, fog), inv = 256 - s;
     let k = side === 1 ? 0.74 : 1; if (ch === 'T') k = 1.45;
     const sk = Math.min(400, (s * k) | 0), fR = fr * inv, fG = fg * inv, fB = fb * inv;
@@ -2223,14 +2493,31 @@ function renderWorld(world, P, sprites, time, bob) {
     const y0 = top < 0 ? 0 : top, y1 = top + lineH > RH ? RH : top + lineH;
     const step = TS / lineH; let tp = (y0 - top) * step;
     for (let y = y0; y < y1; y++, tp += step) {
-      const c = tex[(tp & (TS - 1)) * TS + tx];
-      let r = ((c & 255) * sk + fR) >> 8, gg = (((c >> 8) & 255) * sk + fG) >> 8, b = (((c >> 16) & 255) * sk + fB) >> 8;
+      const trow = tp & (TS - 1), m = (sk * AOr[trow]) >> 8, c = tex[trow * TS + tx];
+      let r = ((((c & 255) * m * lR) >> 7) + fR) >> 8, gg = (((((c >> 8) & 255) * m * lG) >> 7) + fG) >> 8, b = (((((c >> 16) & 255) * m * lB) >> 7) + fB) >> 8;
       if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255;
       buf[y * RW + x] = (0xff000000 | (b << 16) | (gg << 8) | r) >>> 0;
     }
+    wbot[x] = y1;
+    /* отражение стены в глянцевом полу: зеркально вниз от основания */
+    if (refl && y1 < RH && lineH > 3) {
+      const Rr = Math.min((lineH * 0.85) | 0, RH - y1);
+      for (let i = 0; i < Rr; i++) {
+        const yy = y1 + i, gv = gl[yy * RW + x]; if (!(gv & 127)) continue;
+        let sr = y1 - 1 - i;
+        if (gv & 128) sr += Math.round(Math.sin(i * 0.9 + time * 3.2 + x * 0.33) * (1 + i * 0.04));
+        if (sr < top || sr >= y1) continue;
+        const trow = (((sr - top) * step) | 0) & (TS - 1), m = (sk * AOr[trow]) >> 8, c = tex[trow * TS + tx];
+        let r = ((((c & 255) * m * lR) >> 7) + fR) >> 8, gg = (((((c >> 8) & 255) * m * lG) >> 7) + fG) >> 8, b = (((((c >> 16) & 255) * m * lB) >> 7) + fB) >> 8;
+        if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255;
+        const f = 1 - i / Rr; let a = ((gv & 127) * REFL_GAIN * f * f) | 0; if (a > 235) a = 235;
+        const bi = yy * RW + x, bc = buf[bi], br = bc & 255, bg = (bc >> 8) & 255, bb = (bc >> 16) & 255;
+        buf[bi] = (0xff000000 | (((bb + (((b - bb) * a) >> 8)) & 255) << 16) | (((bg + (((gg - bg) * a) >> 8)) & 255) << 8) | ((br + (((r - br) * a) >> 8)) & 255)) >>> 0;
+      }
+    }
   }
 
-  /* ---- спрайты (дальние первыми) ---- */
+  /* ---- спрайты (дальние первыми): свет, тень на полу, отражение ---- */
   const inv = 1 / (px * dy - dx * py);
   for (const s of sprites) {
     const rx = s.x - P.x, ry = s.y - P.y;
@@ -2243,6 +2530,30 @@ function renderWorld(world, P, sprites, time, bob) {
     if (x1 < 0 || x0 >= RW) continue;
     const shd = s.glow ? 256 : lightD(ty, fog), fl = s.flash > 0, tn = s.tint, ninv = 256 - shd;
     const sR = fr * ninv, sG = fg * ninv, sB = fb * ninv;
+    let shR = shd, shG = shd, shB = shd;
+    if (!s.glow) {
+      lmSample(world, s.x, s.y); let a = LR, b2 = LG, c2 = LB;
+      if (nd) for (let j = 0; j < nd; j++) {
+        const d = dyn[j], ex = s.x - d.x, ey = s.y - d.y, d2 = ex * ex + ey * ey;
+        if (d2 < d.R2) { const kq = 1 - d2 * d.iR2, kk = kq * kq * d.I * 128; a += kk * d.r; b2 += kk * d.g; c2 += kk * d.b; }
+      }
+      a = 128 + (a - 128) * 0.55; b2 = 128 + (b2 - 128) * 0.55; c2 = 128 + (c2 - 128) * 0.55;   // спрайты мягче реагируют на свет, чтобы светлые не белели
+      shR = (shd * (a > 255 ? 255 : a | 0)) >> 7; shG = (shd * (b2 > 255 ? 255 : b2 | 0)) >> 7; shB = (shd * (c2 > 255 ? 255 : c2 | 0)) >> 7;
+    }
+    const yf = hz + 0.5 * unit;                           // строка пола под спрайтом
+    /* тень на полу: под ногами, вытянутая от ближайшего огня */
+    if (s.sdw && ty < fog * 0.95 && s.z < 0.42) {
+      const hw = Math.max(2, sw * 0.4 * (s.sdwW || 1)), hh = Math.max(1, hw * Math.min(0.5, 0.5 / ty));
+      let cx2 = scrX, cy2 = yf;
+      if (hi) {
+        shadowDir(world, s.x, s.y, SH_DIR);
+        if (SH_DIR.x || SH_DIR.y) {
+          const rx2 = s.x + SH_DIR.x - P.x, ry2 = s.y + SH_DIR.y - P.y, tx2 = inv * (dy * rx2 - dx * ry2), ty2 = inv * (-py * rx2 + px * ry2);
+          if (ty2 > 0.2) { cx2 = (RW / 2) * (1 + tx2 / ty2); cy2 = hz + 0.5 * RH / ty2; }
+        }
+      }
+      floorShadow(scrX, yf, cx2, cy2, hw, hh, s.sdw * 0.66 * (1 - Math.min(0.8, s.z * 1.6)), ty);
+    }
     const ya = Math.max(0, Math.floor(top)), yb = Math.min(RH - 1, Math.floor(bottom));
     for (let x = Math.max(0, x0); x <= Math.min(RW - 1, x1); x++) {
       if (ty >= zbuf[x]) continue;
@@ -2256,12 +2567,36 @@ function renderWorld(world, P, sprites, time, bob) {
         if (tn) { r = r * tn[0] >> 8; gg = gg * tn[1] >> 8; b = b * tn[2] >> 8; if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255; }
         if (fl) { r = (r + 255) >> 1; gg = (gg + 255) >> 1; b = (b + 255) >> 1; }
         if (s.glow) { buf[y * RW + x] = (0xff000000 | (b << 16) | (gg << 8) | r) >>> 0; continue; }
-        r = (r * shd + sR) >> 8; gg = (gg * shd + sG) >> 8; b = (b * shd + sB) >> 8;
+        r = (r * shR + sR) >> 8; gg = (gg * shG + sG) >> 8; b = (b * shB + sB) >> 8;
+        if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255;
         buf[y * RW + x] = (0xff000000 | (b << 16) | (gg << 8) | r) >>> 0;
+      }
+    }
+    /* отражение спрайта в полу: зеркально относительно линии пола */
+    if (refl && s.rf && s.z < 0.42 && yf < RH) {
+      const yEnd = Math.min(RH - 1, Math.floor(2 * yf - top)), span = Math.max(1, yEnd - yf);
+      for (let x = Math.max(0, x0); x <= Math.min(RW - 1, x1); x++) {
+        if (ty >= zbuf[x]) continue;
+        const u = (((x - x0) / (x1 - x0 + 1)) * sp.w) | 0;
+        for (let y = Math.max(0, Math.ceil(yf)); y <= yEnd; y++) {
+          const gv = gl[y * RW + x]; if (!(gv & 127)) continue;
+          let yp = 2 * yf - y;
+          if (gv & 128) yp += Math.sin((y - yf) * 0.9 + time * 3.2 + x * 0.33) * (0.6 + (y - yf) * 0.05);
+          if (yp > bottom || yp < top) continue;
+          const v = (((yp - top) / sh) * sp.h) | 0; if (v < 0 || v >= sp.h) continue;
+          const c = sp.data[v * sp.w + u]; if ((c >>> 24) === 0) continue;
+          let r = c & 255, gg = (c >> 8) & 255, b = (c >> 16) & 255;
+          if (tn) { r = r * tn[0] >> 8; gg = gg * tn[1] >> 8; b = b * tn[2] >> 8; if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255; }
+          if (!s.glow) { r = (r * shR + sR) >> 8; gg = (gg * shG + sG) >> 8; b = (b * shB + sB) >> 8; if (r > 255) r = 255; if (gg > 255) gg = 255; if (b > 255) b = 255; }
+          const f = 1 - (y - yf) / (span + 1); let a = ((gv & 127) * REFL_GAIN * 0.8 * f) | 0; if (a > 200) a = 200;
+          const bi = y * RW + x, bc = buf[bi], br = bc & 255, bg = (bc >> 8) & 255, bb = (bc >> 16) & 255;
+          buf[bi] = (0xff000000 | (((bb + (((b - bb) * a) >> 8)) & 255) << 16) | (((bg + (((gg - bg) * a) >> 8)) & 255) << 8) | ((br + (((r - br) * a) >> 8)) & 255)) >>> 0;
+        }
       }
     }
   }
   ctx.putImageData(frameImg, 0, 0);
+  if (hi) { bloomPass(T.bloomT || BLOOM_T); ctx.drawImage(vigCv, 0, 0); }
 }
 
 /* ============ ЗВУК: синтез на WebAudio ============ */
@@ -2404,6 +2739,7 @@ function loadFloor(i) {
   G.floor = i;
   G.world = { grid: L.grid, w: L.w, h: L.h, patch: L.patch, special: L.special, tex: biomeTex(spec.biome), name: B.name, biome: spec.biome, meta: L.meta };
   G.ents = L.ents.map(spawn);
+  buildLightmap(G.world, G.ents);
   G.seen = Array.from({ length: L.h }, () => Array(L.w).fill(false));
   G.proj = []; G.fx = []; G.bolts = []; G.nums = []; G.boss = null; G.shopEnt = null;
   F = { key: false, bossDead: false, bossSeen: false };
@@ -3034,7 +3370,7 @@ function updateWorld(dt, inp) {
 function buildSprites(t) {
   const list = [], sq = (x, y) => (x - P.x) * (x - P.x) + (y - P.y) * (y - P.y);
   for (const e of G.ents) {
-    let spr, sc, z, flash = 0, tint = null, glow = false;
+    let spr, sc, z, flash = 0, tint = null, glow = false, sdw = 1;
     if (e.kind === 'enemy') {
       const d = e.def;
       spr = SPR[d.spr]; sc = d.sc * (e.elite ? 1.12 : 1) * (e.wind > 0 ? 1.08 : 1); flash = e.flash;
@@ -3044,17 +3380,17 @@ function buildSprites(t) {
       else if (e.slow > 0) tint = [170, 220, 330];
       else if (e.elite) tint = [330, 290, 150];
     } else if (e.kind === 'deco') {
-      const dk = DECOR[e.k]; spr = SPR[dk.spr]; sc = dk.sc; z = dk.z; glow = !!dk.glow;
+      const dk = DECOR[e.k]; spr = SPR[dk.spr]; sc = dk.sc; z = dk.z; glow = !!dk.glow; sdw = dk.hang ? 0 : glow ? 0.6 : 1;
       if (glow && !dk.hang) sc *= 1 + 0.035 * Math.sin(t * 9 + e.seed * 3);
     } else if (e.kind === 'item') {
-      spr = itemWorldSprite(e.item); sc = 0.34; z = 0.06 + Math.sin(t * 3 + e.seed) * 0.03;
+      spr = itemWorldSprite(e.item); sdw = 0.5; sc = 0.34; z = 0.06 + Math.sin(t * 3 + e.seed) * 0.03;
       if (e.item.rarity > 0) list.push({ x: e.x, y: e.y, spr: SPARK[e.item.rarity], sc: 0.16 + 0.03 * Math.sin(t * 5 + e.seed), z: 0.3 + Math.sin(t * 3 + e.seed) * 0.03, glow: true, d: sq(e.x, e.y) - 0.01 });
     } else {
       const lk = ENT_LOOK[e.t]; spr = (e.t === 'chest' && e.opened) ? SPR.chestOpen : (e.t === 'altar' && e.used) ? SPR.altarUsed : SPR[ENT_SPR[e.t]];
       sc = lk.sc; z = lk.z + (e.kind === 'pickup' ? Math.sin(t * 3 + e.seed) * 0.03 : 0);
       if (e.t === 'chest' && e.vault && !e.opened) tint = [330, 280, 160];
     }
-    list.push({ x: e.x, y: e.y, spr, sc, z, flash, tint, glow, near: e.kind === 'deco' ? 0.5 : 0, d: sq(e.x, e.y) });
+    list.push({ x: e.x, y: e.y, spr, sc, z, flash, tint, glow, sdw, rf: sdw > 0 ? 1 : 0, near: e.kind === 'deco' ? 0.5 : 0, d: sq(e.x, e.y) });
   }
   for (const p of G.proj) {
     const sp = p.friendly ? (p.kind === 'frost' ? SPR.iceBolt : SPR.fireball) : SPR[p.spr] || SPR.orb;
@@ -3473,9 +3809,13 @@ function placeMinimap() {
 }
 
 /* ---------- главный цикл ---------- */
-let lastT = performance.now(), mmT = 0;
+let lastT = performance.now(), mmT = 0, gfxAcc = 0, gfxN = 0;
 function frame(now) {
-  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  const raw = (now - lastT) / 1000, dt = Math.min(0.05, raw); lastT = now;
+  if (G.mode === 'play' && GFX.high && GFX.auto && raw < 0.25) {          // слабое устройство: сами переходим на простую графику
+    gfxAcc += raw;
+    if (++gfxN >= 150) { if (gfxAcc / gfxN > 0.036) { GFX.high = false; GFX.auto = false; const gb = $('btnGfx'); if (gb) gb.textContent = gfxLabel(); toast('Включена простая графика для плавности. Вернуть: Пауза → Графика', 3600); } gfxAcc = 0; gfxN = 0; }
+  }
   let inp = { fwd: 0, strafe: 0, turn: 0, look: 0 };
   try { inp = readInput(dt); } catch (e) { console.error(e); }
   if (G.mode === 'play') updateWorld(dt, inp);
@@ -3484,7 +3824,7 @@ function frame(now) {
     G.hurt = Math.max(0, G.hurt - dt); G.flashGreen = Math.max(0, G.flashGreen - dt); G.flashGold = Math.max(0, G.flashGold - dt); G.flashWhite = Math.max(0, G.flashWhite - dt); G.bob = 0;
     if (G.mode === 'title' || G.mode === 'dialog' || G.mode === 'menu') updateProjectiles(dt);
   }
-  renderWorld(G.world, P, buildSprites(G.time), G.time, G.mode === 'play' ? G.bob : 0);
+  renderWorld(G.world, P, buildSprites(G.time), G.time, G.mode === 'play' ? G.bob : 0, buildDynLights());
   drawOverlays(); updateHud();
   if ((mmT -= dt) < 0) { mmT = 0.5; placeMinimap(); }
   requestAnimationFrame(frame);
@@ -3737,6 +4077,15 @@ function toggleSound() { setMuted(!muted); $('btnMute').classList.toggle('off', 
 $('btnMute').addEventListener('click', () => { unlockAudio(); toggleSound(); });
 $('btnSnd').addEventListener('click', () => { unlockAudio(); toggleSound(); });
 $('btnTouch').addEventListener('click', () => { touchPref = touchPref === 'auto' ? 'on' : touchPref === 'on' ? 'off' : 'auto'; applyTouchUI(); });
+/* качество графики: высокая (отражения, огни снарядов, свечение) или простая для слабых устройств */
+const GKEY = 'pixel-catacombs-gfx';
+const gfxLabel = () => 'Графика: ' + (GFX.high ? 'высокая' : 'простая');
+try { const gv = localStorage.getItem(GKEY); if (gv === '0') { GFX.high = false; GFX.auto = false; } else if (gv === '1') GFX.auto = false; } catch (e) { }
+$('btnGfx').textContent = gfxLabel();
+$('btnGfx').addEventListener('click', () => {
+  unlockAudio(); GFX.high = !GFX.high; GFX.auto = false; $('btnGfx').textContent = gfxLabel();
+  try { localStorage.setItem(GKEY, GFX.high ? '1' : '0'); } catch (e) { }
+});
 const mouseLabel = () => 'Чувствительность мыши: ' + (mouse.sens + 1) + '/' + MSENS.length;
 $('btnMouse').textContent = mouseLabel();
 $('btnMouse').addEventListener('click', () => {
